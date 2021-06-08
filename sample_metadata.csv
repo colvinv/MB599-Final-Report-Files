@@ -1,0 +1,135 @@
+Sample ID,Sample Description,Replicate ID,Timepoint (Day),Sample Type,Jar ID,Jar Type,Batch ID,Source,PMAxx?,Study,NMR ID,Amplicon ID,Amplicon ID PMAxx
+1A,Primary,1,1,Broth,1,A,42519,Fermentation Batch,x,"Amplicon, NMR",1A.cnx,HA1,HA1C
+2A,Primary,2,1,Broth,2,A,42519,Fermentation Batch,x,"Amplicon, NMR",2A.cnx,HA2,HA2C
+3A,Primary,3,1,Broth,3,A,42519,Fermentation Batch,x,"Amplicon, NMR",3A.cnx,HA3,HA3C
+4A,Primary,1,2,Broth,4,A,42419,Fermentation Batch,x,"Amplicon, NMR",4A.cnx,HA4,HA4C
+5A,Primary,2,2,Broth,5,A,42419,Fermentation Batch,x,"Amplicon, NMR",5A.cnx,HA5,HA5C
+6A,Primary,3,2,Broth,6,A,42419,Fermentation Batch,x,"Amplicon, NMR",6A.cnx,HA6,HA6C
+7A,Primary,1,3,Broth,7,A,42219,Fermentation Batch,x,"Amplicon, NMR",7A.cnx,HA7,HA7C
+8A,Primary,2,3,Broth,8,A,42219,Fermentation Batch,x,"Amplicon, NMR",8A.cnx,HA8,HA8C
+9A,Primary,3,3,Broth,9,A,42219,Fermentation Batch,x,"Amplicon, NMR",9A.cnx,HA9,HA9C
+10A,Primary,1,4,Broth,10,A,41919,Fermentation Batch,,"Amplicon, NMR",10A.cnx,HA10,
+11A,Primary,2,4,Broth,11,A,41919,Fermentation Batch,,"Amplicon, NMR",11A.cnx,HA11,
+12A,Primary,3,4,Broth,12,A,41919,Fermentation Batch,,"Amplicon, NMR",12A.cnx,HA12,
+13A,Primary,1,5,Broth,13,A,41819,Fermentation Batch,,"Amplicon, NMR",13A.cnx,HA13,
+14A,Primary,2,5,Broth,14,A,41819,Fermentation Batch,,"Amplicon, NMR",14A.cnx,HA14,
+15A,Primary,3,5,Broth,15,A,41819,Fermentation Batch,,"Amplicon, NMR",15A.cnx,HA15,
+16A,Primary,1,6,Broth,16,A,41719,Fermentation Batch,,"Amplicon, NMR",16A.cnx,HA16,
+17A,Primary,2,6,Broth,17,A,41719,Fermentation Batch,,"Amplicon, NMR",17A.cnx,HA17,
+18A,Primary,3,6,Broth,18,A,41719,Fermentation Batch,,"Amplicon, NMR",18A.cnx,HA18,
+19A,Primary,1,7,Broth,19,A,41619,Fermentation Batch,,"Amplicon, NMR",19A.cnx,HA19,
+20A,Primary,2,7,Broth,20,A,41619,Fermentation Batch,,"Amplicon, NMR",20A.cnx,HA20,
+21A,Primary,3,7,Broth,21,A,41619,Fermentation Batch,,"Amplicon, NMR",21A.cnx,HA21,
+22A,Primary,1,1,Broth,22,B,42319,Fermentation Batch,,"Amplicon, NMR",22A.cnx,HA22,
+23A,Primary,2,1,Broth,23,B,42319,Fermentation Batch,,"Amplicon, NMR",23A.cnx,HA23,
+24A,Primary,3,1,Broth,24,B,42319,Fermentation Batch,,"Amplicon, NMR",24A.cnx,HA24,
+25A,Primary,1,2,Broth,25,B,42319,Fermentation Batch,x,"Amplicon, NMR",25A.cnx,HA25,HA25C
+26A,Primary,2,2,Broth,26,B,42319,Fermentation Batch,x,"Amplicon, NMR",26A.cnx,HA26,HA26C
+27A,Primary,3,2,Broth,27,B,42319,Fermentation Batch,x,"Amplicon, NMR",27A.cnx,HA27,HA27C
+28A,Primary,1,3,Broth,28,B,42319,Fermentation Batch,x,"Amplicon, NMR",28A.cnx,HA28,HA28C
+29A,Primary,2,3,Broth,29,B,42319,Fermentation Batch,x,"Amplicon, NMR",29A.cnx,HA29,HA29C
+30A,Primary,3,3,Broth,30,B,42319,Fermentation Batch,x,"Amplicon, NMR",30A.cnx,HA30,HA30C
+31A,Primary,1,4,Broth,31,B,42319,Fermentation Batch,x,"Amplicon, NMR",31A.cnx,HA31,HA31C
+32A,Primary,2,4,Broth,32,B,42319,Fermentation Batch,,"Amplicon, NMR",32A.cnx,HA32,
+33A,Primary,3,4,Broth,33,B,42319,Fermentation Batch,,"Amplicon, NMR",33A.cnx,HA33,
+34A,Primary,1,5,Broth,34,B,42319,Fermentation Batch,x,"Amplicon, NMR",34A.cnx,HA34,HA34C
+35A,Primary,2,5,Broth,35,B,42319,Fermentation Batch,x,"Amplicon, NMR",35A.cnx,HA35,HA35C
+36A,Primary,3,5,Broth,36,B,42319,Fermentation Batch,x,"Amplicon, NMR",36A.cnx,HA36,HA36C
+37A,Primary,1,6,Broth,37,B,42319,Fermentation Batch,,"Amplicon, NMR",37A.cnx,HA37,
+38A,Primary,2,6,Broth,38,B,42319,Fermentation Batch,x,"Amplicon, NMR",38A.cnx,HA38,HA38C
+39A,Primary,3,6,Broth,39,B,42319,Fermentation Batch,x,"Amplicon, NMR",39A.cnx,HA39,HA39C
+40A,Primary,1,7,Broth,40,B,42319,Fermentation Batch,,"Amplicon, NMR",40A.cnx,HA40,
+41A,Primary,2,7,Broth,41,B,42319,Fermentation Batch,,"Amplicon, NMR",41A.cnx,HA41,
+42A,Primary,3,7,Broth,42,B,42319,Fermentation Batch,,"Amplicon, NMR",42A.cnx,HA42,
+43A,Primary,1,10,Broth,43,B,42319,Fermentation Batch,,"Amplicon, NMR",43A.cnx,HA43,
+44A,Primary,2,10,Broth,44,B,42319,Fermentation Batch,,"Amplicon, NMR",44A.cnx,HA44,
+45A,Primary,3,10,Broth,45,B,42319,Fermentation Batch,,"Amplicon, NMR",45A.cnx,HA45,
+46A,Primary,1,15,Broth,46,B,42319,Fermentation Batch,,"Amplicon, NMR",46A.cnx,HA46,
+47A,Primary,2,15,Broth,47,B,42319,Fermentation Batch,,"Amplicon, NMR",47A.cnx,HA47,
+48A,Primary,3,15,Broth,48,B,42319,Fermentation Batch,,"Amplicon, NMR",48A.cnx,HA48,
+49A,Primary,1,20,Broth,49,B,42319,Fermentation Batch,,"Amplicon, NMR",49A.cnx,HA49,
+50A,Primary,2,20,Broth,50,B,42319,Fermentation Batch,,"Amplicon, NMR",50A.cnx,HA50,
+51A,Primary,3,20,Broth,51,B,42319,Fermentation Batch,,"Amplicon, NMR",51A.cnx,HA51,
+52A,Starter,1,21,Broth,52,A,40519,Starter Hold Tank,,"Amplicon, NMR",52A.cnx,HA52,
+53A,Starter,2,28,Broth,53,A,32919,Starter Hold Tank,,"Amplicon, NMR",53A.cnx,HA53,
+54A,Starter,3,35,Broth,54,A,32219,Starter Hold Tank,,"Amplicon, NMR",54A.cnx,HA54,
+55A,Starter,1,42,Broth,55,A,30919,Starter Hold Tank,,"Amplicon, NMR",55A.cnx,HA55,
+56A,Starter,2,49,Broth,56,A,030119-12,Starter Hold Tank,,"Amplicon, NMR",56A.cnx,HA56,
+57A,Starter,3,56,Broth,57,A,022219-2,Starter Hold Tank,,"Amplicon, NMR",57A.cnx,HA57,
+58A,Starter,1,70,Broth,58,A,020819-7,Starter Hold Tank,,"Amplicon, NMR",58A.cnx,HA58,
+59A,Original ,1,-,Original,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",59A.cnx,HA59,
+60A,Original ,2,-,Original,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",60A.cnx,HA60,
+61A,Original ,3,-,Original,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",61A.cnx,HA61,
+62A,Original ,4,-,Original,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",62A.cnx,HA62,
+63A,K2-Original ,1,-,Original,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",63A.cnx,HA63,
+64A,K2-Original ,2,-,Original,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",64A.cnx,HA64,
+65A,K2-Original ,3,-,Original,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",65A.cnx,HA65,
+66A,K2-Original ,4,-,Original,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",66A.cnx,HA66,
+67A,PG,1,-,Powergreens,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",67A.cnx,HA67,
+68A,PG,2,-,Powergreens,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",68A.cnx,HA68,
+69A,PG,3,-,Powergreens,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",69A.cnx,HA69,
+70A,PG,4,-,Powergreens,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",70A.cnx,HA70,
+71A,Grape,1,-,Grapefruit,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",71A.cnx,HA71,
+72A,Grape,2,-,Grapefruit,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",72A.cnx,HA72,
+73A,Grape,3,-,Grapefruit,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",73A.cnx,HA73,
+74A,Grape,4,-,Grapefruit,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",74A.cnx,HA74,
+75A,JCK,1,-,Jalapeno Cucumber Kiwi,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",75A.cnx,HA75,
+76A,JCK,2,-,Jalapeno Cucumber Kiwi,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",76A.cnx,HA76,
+77A,JCK,3,-,Jalapeno Cucumber Kiwi,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",77A.cnx,HA77,
+78A,JCK,4,-,Jalapeno Cucumber Kiwi,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",78A.cnx,HA78,
+79A,CC,1,-,Cayenne Cleanse,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",79A.cnx,HA79,
+80A,CC,2,-,Cayenne Cleanse,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",80A.cnx,HA80,
+81A,CC,3,-,Cayenne Cleanse,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",81A.cnx,HA81,
+82A,CC,4,-,Cayenne Cleanse,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",82A.cnx,HA82,
+83A,BR,1,-,Bubbly Rose,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",83A.cnx,HA83,
+84A,BR,2,-,Bubbly Rose,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",84A.cnx,HA84,
+85A,BR,3,-,Bubbly Rose,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",85A.cnx,HA85,
+86A,BR,4,-,Bubbly Rose,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",86A.cnx,HA86,
+87A,Maca,1,-,Maca Berry,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",87A.cnx,HA87,
+88A,Maca,2,-,Maca Berry,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",88A.cnx,HA88,
+89A,Maca,3,-,Maca Berry,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",89A.cnx,HA89,
+90A,Maca,4,-,Maca Berry,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",90A.cnx,HA90,
+91A,PLA,1,-,Pink Lady Apple,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",91A.cnx,HA91,
+92A,PLA,2,-,Pink Lady Apple,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",92A.cnx,HA92,
+93A,PLA,3,-,Pink Lady Apple,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",93A.cnx,HA93,
+94A,PLA,4,-,Pink Lady Apple,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",94A.cnx,HA94,
+95A,Pom,1,-,Pomegrante,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",95A.cnx,HA95,
+96A,Pom,2,-,Pomegrante,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",96A.cnx,HA96,
+97A,Pom,3,-,Pomegrante,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",97A.cnx,HA97,
+98A,Pom,4,-,Pomegrante,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",98A.cnx,HA98,
+99A,BOCG,1,-,Blood Oranger Carrot Ginger,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",99A.cnx,HA99,
+100A,BOCG,2,-,Blood Oranger Carrot Ginger,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",100A.cnx,HA100,
+101A,BOCG,3,-,Blood Oranger Carrot Ginger,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",101A.cnx,HA101,
+102A,BOCG,4,-,Blood Oranger Carrot Ginger,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",NA,HA102,
+103A,GL,1,-,Ginger Lemon,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",103A.cnx,HA103,
+104A,GL,2,-,Ginger Lemon,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",104A.cnx,HA104,
+105A,GL,3,-,Ginger Lemon,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",105A.cnx,HA105,
+106A,GL,4,-,Ginger Lemon,,B,,Retail- Bottled Product- Post Flavor and Carb Additions,,"Amplicon, NMR, Sensory",106A.cnx,HA106,
+1S,Primary ,1,1,SCOBY,1,A,42519,Fermentation Batch,,Amplicon,-,SHA1,
+2S,Primary ,2,1,SCOBY,2,A,42519,Fermentation Batch,,Amplicon,-,SHA2,
+3S,Primary ,3,1,SCOBY,3,A,42519,Fermentation Batch,,Amplicon,-,SHA3,
+4S,Primary ,1,2,SCOBY,4,A,42419,Fermentation Batch,,Amplicon,-,SHA4,
+5S,Primary ,2,2,SCOBY,5,A,42419,Fermentation Batch,,Amplicon,-,SHA5,
+6S,Primary ,3,2,SCOBY,6,A,42419,Fermentation Batch,,Amplicon,-,SHA6,
+7S,Primary ,1,3,SCOBY,7,A,42219,Fermentation Batch,,Amplicon,-,SHA7,
+8S,Primary ,2,3,SCOBY,8,A,42219,Fermentation Batch,,Amplicon,-,SHA8,
+9S,Primary ,3,3,SCOBY,9,A,42219,Fermentation Batch,,Amplicon,-,SHA9,
+10S,Primary ,1,4,SCOBY,10,A,41919,Fermentation Batch,,Amplicon,-,SHA10,
+11S,Primary ,2,4,SCOBY,11,A,41919,Fermentation Batch,,Amplicon,-,SHA11,
+12S,Primary ,3,4,SCOBY,12,A,41919,Fermentation Batch,,Amplicon,-,SHA12,
+13S,Primary ,1,5,SCOBY,13,A,41819,Fermentation Batch,,Amplicon,-,SHA13,
+14S,Primary ,2,5,SCOBY,14,A,41819,Fermentation Batch,x,Amplicon,-,SHA14,HA14SC
+15S,Primary ,3,5,SCOBY,15,A,41819,Fermentation Batch,x,Amplicon,-,SHA15,HA15SC
+16S,Primary ,1,6,SCOBY,16,A,41719,Fermentation Batch,,Amplicon,-,SHA16,
+17S,Primary ,2,6,SCOBY,17,A,41719,Fermentation Batch,,Amplicon,-,SHA17,
+18S,Primary ,3,6,SCOBY,18,A,41719,Fermentation Batch,,Amplicon,-,SHA18,
+19S,Primary ,1,7,SCOBY,19,A,41619,Fermentation Batch,,Amplicon,-,SHA19,
+20S,Primary ,2,7,SCOBY,20,A,41619,Fermentation Batch,,Amplicon,-,SHA20,
+21S,Primary ,3,7,SCOBY,21,A,41619,Fermentation Batch,,Amplicon,-,SHA21,
+52S,Starter,1,21,SCOBY,52,A,40519,Starter Hold Tank,x,Amplicon,-,SHA52,HA52SC
+53S,Starter,1,28,SCOBY,53,A,32919,Starter Hold Tank,,Amplicon,-,SHA55,
+54S,Starter,1,35,SCOBY,54,A,32219,Starter Hold Tank,,Amplicon,-,SHA54,
+55S,Starter,1,42,SCOBY,55,A,30919,Starter Hold Tank,x,Amplicon,-,SHA55,HA55SC
+56S,Starter,1,49,SCOBY,56,A,030119-12,Starter Hold Tank,,Amplicon,-,SHA56,
+57S,Starter,1,56,SCOBY,57,A,022219-2,Starter Hold Tank,,Amplicon,-,SHA57,
+58S,Starter,1,70,SCOBY,58,A,020819-7,Starter Hold Tank,,Amplicon,-,SHA58,

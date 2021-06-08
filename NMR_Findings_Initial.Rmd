@@ -1,0 +1,608 @@
+---
+title: "NMR findings, initial"
+author: "Zach A. Bright"
+date: "5/4/2021"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: true
+---
+
+Create a dataframe that excludes PMA samples, and includes primary samples only. Include the NMR measurements and sample metadata.
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE)
+library(plotly)
+library(phyloseq)
+library(devtools)
+library(ggbiplot)
+library("dplyr")
+library(vegan)
+library(reshape2)
+
+# Import and Format the Data
+# Load NMR data. 
+nmr.data <- read.csv("nmr_data.csv")
+# nmr.data$Sample.ID <- as.numeric(sub("A", "", nmr.data$Sample.ID))
+# Load meta data
+meta.data <- read.csv("sample_metadata.csv")
+# Extract only the NMR data samples.
+meta.data <- subset(meta.data, Sample.Description == "Primary" & PMAxx. == "")
+# meta.data <- meta.data[meta.data$Sample.Description == "Primary" && meta.data$PMAxx., ]
+# Merge the dataframes.
+nmr.meta <- merge(meta.data, nmr.data)
+# Sample IDs must match those of other files. 
+nmr.meta$Sample.ID <- sub("A", "", nmr.meta$Sample.ID)
+nmr.meta$Sample.ID <- sub("^", "HA", nmr.meta$Sample.ID)
+rownames(nmr.meta) <- nmr.meta$Sample.ID
+nmr.meta["Age..days."] <- as.numeric(nmr.meta$Age..days.)
+```
+
+## NMR-detected molecules
+
+This section can be ignored. It is mostly just a warm-up. 
+
+### Acetic acid
+
+I took a look at some of the chemicals that were detected using NMR and found some patterns. Notably, acetic acid content did not correlate significantly with glucose content, correlates with fructose content, but correlates very significantly and more strongly with a linear combination of both:
+
+Both:
+```{r}
+A_GF.model <- lm(
+  Acetic.Acid ~ Glucose + Fructose,
+  data = nmr.meta)
+summary(A_GF.model)$coefficients
+cor(nmr.meta$Acetic.Acid, (nmr.meta$Glucose * A_GF.model$coefficients[2] + nmr.meta$Fructose * A_GF.model$coefficients[3]))
+```
+Just fructose:
+```{r}
+summary(
+  lm(
+    Acetic.Acid ~ Fructose,
+           data = nmr.meta )
+        )$coefficients
+cor(nmr.meta$Fructose, nmr.meta$Acetic.Acid)
+```
+Just glucose:
+```{r}
+summary(
+  lm(
+    Acetic.Acid ~ Glucose,
+           data = nmr.meta )
+        )$coefficients
+cor(nmr.meta$Glucose, nmr.meta$Acetic.Acid)
+```
+
+```{r}
+fig <- plot_ly(nmr.meta, x = ~Fructose, y = ~Glucose, z = ~Acetic.Acid)
+fig
+c <- cor(nmr.meta$Fructose, nmr.meta$Glucose, use = "complete.obs")
+paste("Pearson correlation of glucose and fructose: ", c)
+```
+
+## Comparing NMR Measurements to Bacterial Population Proportions
+
+```{r phyloseq setup, include=FALSE}
+# These phyloseq objects were made by Keisha Rose Harrison.
+dfbacteria <- readRDS("phyloseq objects/dfbacteria.rds")
+dffungi <- readRDS("phyloseq objects/dffungi.rds")
+```
+
+### PCA analysis of NMR Data
+Use principal component analysis to find major PCs. 
+
+```{r}
+# Extract the NMR mesaurements for broth samples only. 
+# also exclude the first 3 compounds, which don't have characterized flavors
+data1 <- na.omit(nmr.meta[16:42][nmr.meta$Sample.Type == "Broth", ])
+
+# Remove compounds with zero variance.
+data2 <- log(data1[,apply(data1, 2, var, na.rm=TRUE) != 0] + 0.00001) # Thanks to cdeterman on Stackoverflow
+
+# Exclude these uninteresting molecules. 
+data2 <- subset(data2, select = c(
+  -X2.Hydroxyisobutyrate,
+  -X2.Hydroxyisovalerate,
+  -X4.Guanidinobutanoate,
+  -Caffeine
+    )
+  )
+
+# PCA analysis on the object.
+nmr.pca <- prcomp(data2, center = TRUE, scale. = TRUE)
+# Visualize the results.
+summary(nmr.pca)
+ggbiplot(nmr.pca, )
+```
+
+### Fungi
+
+#### Primary NMR PCA
+Creates an OTU table that is compatible with the NMR data. Then, project the primary PC onto the NMR data so that each sample has population proportion data and a PCA projection. 
+```{r}
+# OTU table for fungi
+# Only worry about genera
+dffungi <- tax_glom(dffungi, taxrank = "Genus")
+tax_table(dffungi)[, "Genus"]
+otu.fungi <- otu_table(dffungi)
+otu.fungi <- otu.fungi[, intersect(rownames(nmr.meta), colnames(otu.fungi))]
+# otu.fungi <- otu.fungi[, apply(otu.fungi, 2, var, na.rm = TRUE) != 0]  # Get rid of constant species.
+dim(otu.fungi)
+#unassigned.fungi <- data.frame(otu.fungi)[, intersect(colnames(otu.fungi), tax_table(dffungi)[, "Genus"] == "Unassigned")]
+# Get rid of samples with >50% unassigned genera.
+#otu.fungi <- subset(t(otu.fungi), colSums(unassigned.fungi) / colSums(otu.fungi) < 0.5)
+# Convert to sample proportions. 
+#otu.fungi <- otu.fungi / colSums(otu.fungi)
+otu.fungi <- sweep(otu.fungi, 2, colSums(otu.fungi), "/")
+# Require that at each taxon is present at at least 5% in at least 3 samples
+otu.fungi <- t(na.exclude(otu.fungi[rowSums(otu.fungi > 0.001) > 2, ]))
+
+# Normalize the nmr readings and project onto PCA1 
+nmr.pca1.rowsums <- scale(data2, nmr.pca$center, nmr.pca$scale) %*% nmr.pca$rotation[, 1]
+pca1.chemicals <- merge(data.frame(nmr.pca1.rowsums), data.frame(data2), by = "row.names")
+
+# Merge the projection with the sample taxa counts. 
+pca1.ITS <- merge(data.frame(nmr.pca1.rowsums), otu.fungi, by = "row.names")
+row.names(pca1.ITS) <- pca1.ITS$Row.names
+pca1.ITS <- subset(pca1.ITS, select = -Row.names)
+# Merge age as well. 
+pca1.ITS <- merge(nmr.meta["Age..days."], pca1.ITS, by = "row.names")  # Control for age.
+row.names(pca1.ITS) <- pca1.ITS$Row.names
+pca1.ITS <- subset(pca1.ITS, select = -Row.names)
+colnames(pca1.ITS)
+# Use forward and backward selection to find a linear model for taxa vs. nmr PCA 1
+# controlling for age.
+```
+
+Create a function to automatically perform FDR correction on a linear model's coefficients.
+```{r, include = FALSE}
+adjust_p_values <- function(model_summary) {
+  pvals <- model_summary$coefficients[, 4]
+  model_summary$coefficients[, 4] <- p.adjust(pvals)
+  return(model_summary)
+}
+```
+
+Create a linear model using the primary PC as a response variable and all OTUs as explanatory variables. Use stepwise regression to find a favorable model. (Note that the FDR values are still deflated because the model selection process isn't corrected for).
+```{r}
+pca1.species <- step(lm(nmr.pca1.rowsums ~ ., data = pca1.ITS), trace = FALSE)
+adjust_p_values(summary(pca1.species))
+```
+Repeat the above model selection process, but this time use the interaction of the OTUs with time. Also show the full model.
+```{r}
+pca1.species.interaction <- step(lm(nmr.pca1.rowsums ~ . :Age..days., data = pca1.ITS), trace = FALSE)
+adjust_p_values(summary(pca1.species.interaction))
+
+adjust_p_values(summary(lm(nmr.pca1.rowsums ~ . :Age..days., data = pca1.ITS)))
+```
+Investigate the interaction of ASVs 041 and 030 with age. 
+```{r}
+plot_ly(pca1.ITS, x = ~Age..days., y = ~ASV041, z = ~nmr.pca1.rowsums)
+plot_ly(pca1.ITS, x = ~Age..days., y = ~ASV030, z = ~nmr.pca1.rowsums)
+```
+
+Only age was highly significant in the above models, so plot pca1 vs. age and see what happens:
+```{r}
+lmtemp <- lm(
+  nmr.pca1.rowsums ~ Age..days.,
+  data = pca1.ITS
+  )
+
+ggplot(
+    data = pca1.ITS,
+    mapping = aes(
+      Age..days.,
+      nmr.pca1.rowsums)) +
+    geom_point() +
+    geom_smooth(method = "lm") +
+    xlab("Age in Days") +
+    ylab("PCA1") +
+    ggtitle("Primary PC Change Over Time")
+cor(pca1.ITS$nmr.pca1.rowsums, pca1.ITS$Age..days.)
+summary(lm(nmr.pca1.rowsums ~ Age..days., data = pca1.ITS))
+```
+
+#### Correlation with NMR PCA 2 
+Repeat the above steps, but using PC 2, which explains ~12% of the variance. 
+```{r}
+# Normalize the nmr readings and project onto PCA1 
+nmr.pca2.rowsums <- scale(data2, nmr.pca$center, nmr.pca$scale) %*% nmr.pca$rotation[, 2]
+pca2.chemicals <- merge(data.frame(nmr.pca2.rowsums), data.frame(data2), by = "row.names")
+
+# Merge the projection with the sample taxa counts. 
+pca2.ITS <- merge(data.frame(nmr.pca2.rowsums), otu.fungi, by = "row.names")
+row.names(pca2.ITS) <- pca2.ITS$Row.names
+pca2.ITS <- subset(pca2.ITS, select = -Row.names)
+# Merge age as well. 
+pca2.ITS <- merge(nmr.meta["Age..days."], pca2.ITS, by = "row.names")  # Control for age.
+row.names(pca2.ITS) <- pca2.ITS$Row.names
+pca2.ITS <- subset(pca2.ITS, select = -Row.names)
+colnames(pca2.ITS)
+# Use forward and backward selection to find a linear model for taxa vs. nmr PCA 1
+# controlling for age.
+pca2.species <- step(lm(nmr.pca2.rowsums ~ ., data = pca2.ITS), trace = FALSE)
+adjust_p_values(summary(pca2.species))
+# pairs(pca1.ITS)
+```
+
+And again with PC3, which only explains 8% of the variance.
+```{r}
+# Normalize the nmr readings and project onto PCA1 
+nmr.pca3.rowsums <- scale(data2, nmr.pca$center, nmr.pca$scale) %*% nmr.pca$rotation[, 3]
+pca3.chemicals <- merge(data.frame(nmr.pca3.rowsums), data.frame(data2), by = "row.names")
+
+# Merge the projection with the sample taxa counts. 
+pca3.ITS <- merge(data.frame(nmr.pca3.rowsums), otu.fungi, by = "row.names")
+row.names(pca3.ITS) <- pca3.ITS$Row.names
+pca3.ITS <- subset(pca3.ITS, select = -Row.names)
+# Merge age as well. 
+pca3.ITS <- merge(nmr.meta["Age..days."], pca3.ITS, by = "row.names")  # Control for age.
+row.names(pca3.ITS) <- pca3.ITS$Row.names
+pca3.ITS <- subset(pca3.ITS, select = -Row.names)
+colnames(pca3.ITS)
+# Use forward and backward selection to find a linear model for taxa vs. nmr PCA 1
+# controlling for age.
+pca3.species <- step(lm(nmr.pca3.rowsums ~ ., data = pca3.ITS), trace = FALSE)
+adjust_p_values(summary(pca3.species))
+# pairs(pca1.ITS)
+```
+
+
+#### Correlations with compounds
+Create a csv file for the correlation between compounds and OTUs. This will be turned into a heatmap in excel. 
+```{r}
+cor(nmr.meta[rownames(otu.fungi), 16:42], otu.fungi) -> fun.cor
+c(tax_table(dffungi)[, "Genus"][colnames(fun.cor)]) -> colnames(fun.cor)
+write.table(fun.cor, "fungi_nmr_correlations.csv")
+```
+
+#### Acetic acid. 
+Investigate the connection between taxa and acetic acid. This is actually done better in a different document, so this can be ignored. 
+```{r}
+AA.species <- merge(nmr.meta[c("Acetic.Acid", "Age..days.")], otu.fungi, by = "row.names")
+row.names(AA.species) <- AA.species$Row.names
+AA.species$Row.names <- NULL
+AA.model <- step(lm(Acetic.Acid ~ .,
+                    data = AA.species),
+                 trace = FALSE
+)
+adjust_p_values(summary(AA.model))
+data.frame(tax_table(dffungi))["Genus"]
+```
+There is very weak evidence for any correlation between species and acetic acid. Interestingly, however, ASV041 appears to be possibly correlated with AA.
+
+#### Brettanomyces
+
+It looked like `Brettanomyces` had a lot of strong correlations with NMR compounds, so let's try to find a model that describes Brett abundance in terms of compounds measured. 
+
+```{r}
+adjust_p_values(
+  summary(
+    step(
+      lm(
+        c(otu.fungi[, "ASV030"]) ~ . : nmr.meta[rownames(otu.fungi), "Age..days."],
+        data = nmr.meta[rownames(otu.fungi), 16:42]),
+      trace = FALSE
+      )
+    )
+  )
+```
+
+```{r}
+adjust_p_values(
+  summary(
+    step(
+      lm(
+        c(otu.fungi[, "ASV041"]) ~ . : nmr.meta[rownames(otu.fungi), "Age..days."],
+        data = nmr.meta[rownames(otu.fungi), 16:42]),
+      trace = FALSE
+      )
+    )
+  )
+```
+
+
+Ok, this doesn't look very good. The F-statistic for the model is not significant, indicating that we can't reject the null hypothesis that none of the parameters is significant at all. A few chemicals seem significant on their own, but we have to account for the fact the many hypothesis tests are being made.
+
+Investigate the connection between ASV030 and acetic acid. 
+```{r}
+# Make a convenient dataframe for comparison
+merge(otu.fungi, nmr.meta[, 16:42], by = "row.names") -> a
+a$Row.names -> row.names(a) 
+a$Age..days. <- nmr.meta[row.names(a), ]$Age..days.
+a <- subset(a, select = -Row.names)
+
+plot_ly(a, x = ~ASV030, y = ~Acetic.Acid, z = ~Age..days.)
+``` 
+
+### Bacteria
+
+This is the same as what we did with fungi.
+
+#### Primary NMR PCA
+
+Creates an OTU table that is compatible with the NMR data. Then, project the primary PC onto the NMR data so that each sample has population proportion data and a PCA projection.
+```{r bacteria}
+# OTU table for bacteria
+# Only worry about genera
+dfbacteria <- tax_glom(dfbacteria, taxrank = "Genus")
+tax_table(dfbacteria)[, "Genus"]
+otu.bacte <- otu_table(dfbacteria)
+otu.bacte <- otu.bacte[, intersect(rownames(nmr.meta), colnames(otu.bacte))]
+# otu.bacte <- otu.bacte[, apply(otu.bacte, 2, var, na.rm = TRUE) != 0]  # Get rid of constant species.
+dim(otu.bacte)
+#unassigned.fungi <- data.frame(otu.bacte)[, intersect(colnames(otu.bacte), tax_table(dffungi)[, "Genus"] == "Unassigned")]
+# Get rid of samples with >50% unassigned genera.
+#otu.bacte <- subset(t(otu.bacte), colSums(unassigned.fungi) / colSums(otu.bacte) < 0.5)
+# Convert to sample proportions. 
+otu.bacte <- sweep(otu.bacte, 2, colSums(otu.bacte), "/")
+# Require that at each taxon is present at at least 5% in at least 3 samples
+otu.bacte <- t(na.exclude(otu.bacte[rowSums(otu.bacte > 0.0001) > 2, ]))
+
+
+# Make a variable for PC1.
+#normed <- nmr.pca$x[, 1] / norm(as.matrix(nmr.pca$x[, 1]))
+nmr.pca1.rowsums <- scale(data2, nmr.pca$center, nmr.pca$scale) %*% nmr.pca$rotation[, 1]
+pca1.chemicals <- merge(data.frame(nmr.pca1.rowsums), data.frame(data2), by = "row.names")
+# pca1.chemicals
+# step(lm(nmr.pca1.rowsums ~ ., data = pca1.chemicals))  # This SHOULD yield an error, I think(?)
+pca1.16S <- merge(data.frame(nmr.pca1.rowsums), otu.bacte, by = "row.names")
+row.names(pca1.16S) <- pca1.16S$Row.names
+pca1.16S <- subset(pca1.16S, select = -Row.names)
+pca1.16S <- merge(nmr.meta["Age..days."], pca1.16S, by = "row.names")  # Control for age.
+row.names(pca1.16S) <- pca1.16S$Row.names
+pca1.16S <- subset(pca1.16S, select = -Row.names)
+colnames(pca1.16S)
+pca1.16S <- pca1.16S[, apply(pca1.16S, 2, var, na.rm = TRUE) != 0]  # Get rid of constant species.
+# Use forward and backward selection to find a linear model for taxa vs. nmr PCA 1
+# controlling for age.
+pca1.species <- step(lm(nmr.pca1.rowsums ~ ., data = pca1.16S), trace = FALSE)
+adjust_p_values(summary(pca1.species))
+# pairs(pca1.16S)
+```
+```{r}
+pca1.species.interaction <- step(lm(nmr.pca1.rowsums ~ . : Age..days., data = pca1.16S), trace = FALSE)
+adjust_p_values(summary(pca1.species.interaction))
+```
+
+#### Secondary PCA
+Do the same as above but for the second PC
+```{r}
+# Merge the projection with the sample taxa counts. 
+pca2.16S <- merge(data.frame(nmr.pca2.rowsums), otu.bacte, by = "row.names")
+row.names(pca2.16S) <- pca2.16S$Row.names
+pca2.16S <- subset(pca2.16S, select = -Row.names)
+# Merge age as well. 
+pca2.16S <- merge(nmr.meta["Age..days."], pca2.16S, by = "row.names")  # Control for age.
+row.names(pca2.16S) <- pca2.16S$Row.names
+pca2.16S <- subset(pca2.16S, select = -Row.names)
+colnames(pca2.16S)
+# Use forward and backward selection to find a linear model for taxa vs. nmr PCA 1
+# controlling for age.
+pca2.species <- step(lm(nmr.pca2.rowsums ~ ., data = pca2.16S), trace = FALSE)
+adjust_p_values(summary(pca2.species))
+# pairs(pca1.ITS)
+```
+
+#### Correlations with compounds
+
+Create a csv file with the correlations of all OTUs and all compounds. These will be turned into a heatmap in excel. 
+```{r}
+cor(nmr.meta[rownames(otu.bacte), 16:42], otu.bacte) -> bac.cor
+c(tax_table(dfbacteria)[, "Genus"][colnames(bac.cor)]) -> colnames(bac.cor)
+write.table(bac.cor, "bacteria_nmr_correlations.csv")
+```
+
+#### Acetic acid.
+
+OTUs as an explainer of acetic acid content.
+```{r}
+AA.species <- merge(nmr.meta[c("Acetic.Acid", "Age..days.")], otu.bacte, by = "row.names")
+row.names(AA.species) <- AA.species$Row.names
+AA.species$Row.names <- NULL
+AA.model <- step(lm(Acetic.Acid ~ .,
+                    data = AA.species),
+                 trace = FALSE
+)
+adjust_p_values(summary(AA.model))
+```
+Nothing is significantly correlated with AA except age.
+
+## Using NMDS
+
+Attempt to create an ordination of the OTU values for fungi and bacteria. Plot against the primary PC.
+```{r}
+metaMDS(otu.bacte) -> bacteria.MDS  # Use multidimensional scaling on taxa.
+plot(bacteria.MDS, type = "t")
+
+# projject sample communities on the MDS vectors and model versus chemicals
+bacteria.MDS$species[, 1] / sum(bacteria.MDS$species[, 1]**2) -> NMDS1
+otu.bacte %*% NMDS1 ->NMDS1.ord
+summary(lm(NMDS1.ord ~ ., data = data2))
+plot(nmr.pca1.rowsums ~ NMDS1.ord)
+
+bacteria.MDS$species[, 2] / sum(bacteria.MDS$species[, 2]**2) -> NMDS2
+otu.bacte %*% NMDS2 ->NMDS2.ord
+summary(lm(NMDS2.ord ~ ., data = data2))
+plot(nmr.pca1.rowsums ~ NMDS2.ord)
+```
+
+## Chemicals vs. Time plot
+
+Plot the trajectory of some chemicals of interest over time. Use a log scale, as this allows them all to be seen on a similar scale and also seems to correlate well. 
+```{r}
+age.chem <- merge(nmr.meta["Age..days."], data2, by = "row.names")
+age.chem <- subset(age.chem, select = -Row.names)
+
+for(chemical in colnames(data2)){
+  plot_title = paste(chemical, "vs time")
+  print(plot_title)
+  ggplot(data = age.chem, mapping = aes(Age..days., age.chem[, chemical])) +
+    geom_point() +
+    ggtitle(plot_title) +
+    xlab("Age in Days") +
+    ylab("concentration")
+  ggsave(filename = paste("~/Documents/Classes/MB 599/Plots/chemicals_vs_time/", plot_title, ".png", sep = ""))
+}
+
+age.chem[, c("Age..days.", "Acetic.Acid", "Ethanol", "Lactic.acid", "Glucose", "Fructose", "Sucrose", "Tartaric.acid")] -> age.chem.subset
+age.chem.melt <- melt(age.chem.subset, "Age..days.", colnames(age.chem.subset[2:8]))
+
+ggplot(data = age.chem.melt, mapping = aes(Age..days., log(value))) + 
+  geom_point(aes(colour = variable)) +
+  geom_smooth(aes(colour = variable), method = "lm", se = FALSE) + 
+  ggtitle("Tastable Chemicals Over Time") +
+  xlab("Age in Days") +
+  ylab("log(Concentration) (mg/L)")
+
+```
+
+#Appendix
+###There are tiny differences attributable to floating point errors. 
+```{r, include = FALSE}
+keisha.fungi.otu <- read.csv("otu.fungi3.csv")
+rownames(keisha.fungi.otu) <- keisha.fungi.otu$samples
+keisha.fungi.otu <- subset(keisha.fungi.otu, select = -samples)
+keisha.fungi.otu <- keisha.fungi.otu[intersect(rownames(nmr.meta), rownames(keisha.fungi.otu)), ]
+max(na.exclude(keisha.fungi.otu[, colSums(keisha.fungi.otu > 0.001) > 2]) - otu.fungi)
+```
+
+
+###Distribution of population proportions
+```{r}
+melt(otu.fungi, 
+     id.vars = colnames(otu.fungi),
+     measure.vars = row.names(otu.fungi)
+     ) -> otu.fungi.melt
+colnames(otu.fungi.melt) <- c("sample", "taxon", "proportion")
+factor(otu.fungi.melt$taxon,
+       levels(otu.fungi.melt$taxon),
+       c(tax_table(dffungi)[levels(otu.fungi.melt$taxon), "Genus"])
+       ) -> otu.fungi.melt$taxon
+ggplot(otu.fungi.melt, aes(x = proportion, y = taxon)) + 
+  geom_boxplot() +
+  ggtitle("Distribution of Fungal Taxa")
+```
+
+```{r}
+melt(otu.bacte, 
+     id.vars = colnames(otu.bacte),
+     measure.vars = row.names(otu.bacte)
+     ) -> otu.bacte.melt
+colnames(otu.bacte.melt) <- c("sample", "taxon", "proportion")
+factor(otu.bacte.melt$taxon,
+       levels(otu.bacte.melt$taxon),
+       c(tax_table(dfbacteria)[levels(otu.bacte.melt$taxon), "Genus"])
+       ) -> otu.bacte.melt$taxon
+ggplot(otu.bacte.melt, aes(x = proportion, y = taxon), ) + 
+  geom_boxplot() +
+  ggtitle("Distribution of Bacterial Taxa")
+```
+
+### Variance of taxonomic groups
+```{r}
+print("fungi:")
+diag(var(otu.fungi))
+print("bacteria:")
+diag(var(otu.bacte))
+```
+###NMDS Analysis
+
+```{r}
+# Grab the sequences.
+import_qiime(refseqfilename = "gg_13_5.fasta") -> refseq_try1
+# Grab the table matching number to taxonomic assignment.
+read.csv("taxonomy.formatted.txt", sep = ";", header = F) -> tax_formatted
+# Remake the bacterial physeq object.
+dfbacteria <- readRDS("phyloseq objects/dfbacteria.rds")
+# Get the list of indices corresponding to the ASV numbers for the taxa in 
+# tax_formatted.
+prodlim::row.match(
+  matrix(tax_formatted[, 2:7]),
+  data.frame(tax_table(dfbacteria)[, 1:6])
+  ) -> matched_rows
+# make a column for row names of matching ASVs. 
+row.names(data.frame(tax_table(dfbacteria)[matched_rows, 1:6])) ->
+  tax_formatted$ASV
+# Make a vector of the indices of the appropriate names in the right order. 
+match(refseq_try1@ranges@NAMES, tax_formatted$V1) -> refseq_name_matches
+# Add the appropriate names to the refseq object. 
+tax_formatted[refseq_name_matches, "ASV"] -> refseq_try1@ranges@NAMES
+# Add the refseq object.
+merge_phyloseq(dfbacteria, refseq_try1) -> dfbacteria
+# Import a tree from greengenes. 
+read_tree_greengenes("gg_13_5_otus_99_annotated.tree") -> bacte.tree
+# Make a vector of the indices of the appropriate names in the right order.
+match(bacte.tree$tip.label, tax_formatted$V1) -> tree_name_matches
+# 
+tax_formatted[tree_name_matches, "ASV"] -> bacte.tree$tip.label
+merge_phyloseq(dfbacteria, bacte.tree) -> dfbacteria
+# Don't use samples we aren't interested in.
+subset_samples(dfbacteria,
+               subset = row.names(sample_data(dfbacteria)) %in%
+                 row.names(nmr.pca1.rowsums)) -> dfbacteria
+ordinate(dfbacteria, "NMDS", "unifrac") -> ord.bacte
+
+UniFrac(dfbacteria, weighted = TRUE) -> ufrac_output
+
+ord.bacte$points[, "MDS1"]
+
+ggplot(data = NULL, aes(ord.bacte$points[, "MDS1"], nmr.pca1.rowsums)) +
+  geom_point() +
+  xlab("MDS1") +
+  ylab("PCA1")
+ggsave("MDS1_vs_PCA1.png")
+
+ggplot(data = NULL, aes(ord.bacte$points[, "MDS1"], nmr.pca2.rowsums)) +
+  geom_point() +
+  xlab("MDS1") +
+  ylab("PCA2")
+ggsave("MDS1_vs_PCA2.png")
+
+ggplot(data = NULL, aes(ord.bacte$points[, "MDS2"], nmr.pca1.rowsums)) +
+  geom_point() +
+  xlab("MDS2") +
+  ylab("PCA1")
+ggsave("MDS2_vs_PCA1.png")
+
+ggplot(data = NULL, aes(ord.bacte$points[, "MDS2"], nmr.pca2.rowsums)) +
+  geom_point() +
+  xlab("MDS2") +
+  ylab("PCA2")
+ggsave("MDS2_vs_PCA2.png")
+
+summary(lm(ord.bacte$points[, "MDS1"] ~ nmr.pca1.rowsums))
+summary(lm(ord.bacte$points[, "MDS1"] ~ nmr.pca2.rowsums))
+summary(lm(ord.bacte$points[, "MDS2"] ~ nmr.pca1.rowsums))
+summary(lm(ord.bacte$points[, "MDS2"] ~ nmr.pca2.rowsums))
+```
+
+```{r}
+ggplot(data = NULL, aes(ord.bacte$points[, "MDS1"], pca1.16S$ASV076)) +
+  geom_point() +
+  xlab("MDS1") +
+  ylab("Relative Abundance") +
+  ggtitle("MDS1 vs Lactobacillus")
+ggsave("MDS1_vs_Lactobacillus.png")
+
+ggplot(data = NULL, aes(ord.bacte$points[, "MDS2"], pca1.16S$ASV076)) +
+  geom_point() +
+  xlab("MDS2") +
+  ylab("Relative Abundance") +
+  ggtitle("MDS2 vs Lactobacillus")
+ggsave("MDS2_vs_Lactobacillus.png")
+
+ggplot(data = NULL, aes(ord.bacte$points[, "MDS1"], pca1.16S$ASV127)) +
+  geom_point() +
+  xlab("MDS1") +
+  ylab("Relative Abundance") +
+  ggtitle("MDS1 vs Gluconacetobacter")
+ggsave("MDS1_vs_Gluconacetobacter.png")
+
+ggplot(data = NULL, aes(ord.bacte$points[, "MDS2"], pca1.16S$ASV127)) +
+  geom_point() +
+  xlab("MDS2") +
+  ylab("Relative Abundance") +
+  ggtitle("MDS2 vs Gluconacetobacter")
+ggsave("MDS2_vs_Gluconacetobacter.png")
+```

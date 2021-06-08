@@ -1,0 +1,308 @@
+---
+title: "NMR Findings, Additional"
+author: "Zach A. Bright"
+date: "5/4/2021"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: true
+---
+
+    
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(plotly)
+library(phyloseq)
+library(devtools)
+library(ggbiplot)
+library("dplyr")
+library(vegan)
+library(ggplot2)
+
+# Import and Format the Data
+# Load NMR data. 
+nmr.data <- read.csv("nmr_data.csv")
+# nmr.data$Sample.ID <- as.numeric(sub("A", "", nmr.data$Sample.ID))
+# Load meta data
+meta.data <- read.csv("sample_metadata.csv")
+# Extract only the NMR data samples.
+meta.data <- subset(meta.data, Sample.Description == "Primary" & PMAxx. == "")
+# meta.data <- meta.data[meta.data$Sample.Description == "Primary" && meta.data$PMAxx., ]
+# Merge the dataframes.
+nmr.meta <- merge(meta.data, nmr.data)
+# Sample IDs must match those of other files. 
+nmr.meta$Sample.ID <- sub("A", "", nmr.meta$Sample.ID)
+nmr.meta$Sample.ID <- sub("^", "HA", nmr.meta$Sample.ID)
+rownames(nmr.meta) <- nmr.meta$Sample.ID
+nmr.meta["Age..days."] <- as.numeric(nmr.meta$Age..days.)
+```
+
+## NMR-detected molecules
+```{r phyloseq setup, include=FALSE}
+# These phyloseq objects were made by Keisha Rose Harrison.
+dfbacteria <- readRDS("/home/zachary/Documents/Classes/MB 599/phyloseq objects/dfbacteria.rds")
+dffungi <- readRDS("/home/zachary/Documents/Classes/MB 599/phyloseq objects/dffungi.rds")
+```
+
+Create a function to automatically adjust p-values for linear models. Neither of these is actually used. 
+```{r, include = FALSE}
+# Note: We need a function that does this for multiple linear models. 
+adjust_p_values <- function(model_summary) {
+  pvals <- model_summary$coefficients[, 4]
+  model_summary$coefficients[, 4] <- p.adjust(pvals)
+  return(model_summary)
+}
+# This function is actually junk. 
+adjust_p_values_multiple <- function(model_list) {
+  pvals <- c()
+  for(model in model_list) {
+    pvals <- append(pvals, model$coefficients[, 4])
+  }
+  pvals_adj <- p.adjust(pvals)
+  for(model in model_list) {
+    n <- length(model$coefficients[, 4])
+    model$coefficient[, 4] <- pvals_adj[1:n]
+    pvals_adj < pvals_adj[n:length(pvals)]
+  }
+  return(model_list)
+}
+```
+
+### Fungi
+Same as in NMR_Findings_Initial, but ignoring more uninteresting chemicals. 
+```{r}
+# OTU table for fungi
+# Only worry about genera
+dffungi <- tax_glom(dffungi, taxrank = "Genus")
+
+otu.fungi <- otu_table(dffungi)
+otu.fungi <- otu.fungi[, intersect(rownames(nmr.meta), colnames(otu.fungi))]
+dim(otu.fungi)
+
+otu.fungi <- sweep(otu.fungi, 2, colSums(otu.fungi), "/")
+# Require that at each taxon is present at at least 5% in at least 3 samples
+otu.fungi <- t(na.exclude(otu.fungi[rowSums(otu.fungi > 0.001) > 2, ]))
+nmr.meta.fungi <- nmr.meta[intersect(rownames(nmr.meta), rownames(otu.fungi)), 15:42]
+nmr.meta.fungi <- subset(nmr.meta.fungi, select = c(
+  -X2.Hydroxyisobutyrate,
+  -X2.Hydroxyisovalerate,
+  -X4.Guanidinobutanoate,
+  -Caffeine,
+  -Glucuronic.acid,
+  -Glycerol,
+  -Citraconate
+    )
+  )
+mean_normalize <- function(vec) {
+  return(vec / mean(vec))
+}
+nmr.meta.fungi[, 2:dim(nmr.meta.fungi)[2]] <- apply(
+  nmr.meta.fungi[, 2:dim(nmr.meta.fungi)[2]], 
+  2, 
+  mean_normalize
+  )
+```
+
+For each taxon, make a model using all the chemicals as explanatory variables, then use stepwise regression to find a stronger model. This code automatically does FDR correction for the variables included, but DOES NOT apply necessary corrections for the model selection process. 
+```{r}
+tax_df <- data.frame(tax_table(dffungi))
+
+pvals <- c()
+for (species in colnames(otu.fungi)) {
+  model.initial <- lm(otu.fungi[, species] ~ Age..days. : ., data = nmr.meta.fungi)
+  #model.final <- summary(model.initial)
+  model.final <- summary(step(model.initial, trace = FALSE))
+  pvals <- append(pvals, model.final$coefficients[, 4])
+  #adjust_p_values_multiple(models)
+}
+pvals_adj <- p.adjust(pvals)
+for (species in colnames(otu.fungi)) {
+  model.initial <- lm(otu.fungi[, species] ~ Age..days. : ., data = nmr.meta.fungi)
+  model.final <- summary(step(model.initial, trace = FALSE))
+  #model.final <- summary(model.initial)
+  n <- length(model.final$coefficients[, 4])
+  model.final$coefficients[, 4] <- pvals_adj[1:n]
+  pvals_adj < pvals_adj[n + 1:length(pvals)]
+  print(paste(species, " (", tax_df[species, "Genus"], ")", ":", sep = ""))
+  print(model.final)
+  #print(pvals_adj)
+  #print(n)
+}
+
+```
+
+Create a linear model using one chemical as the response variable and all others as explanatory variables. Then plot the residuals vs. some species of interest. 
+```{r}
+plot_resid_fungi <- function(taxon, chemical){
+  tax_df <- data.frame(tax_table(dffungi))
+  genus <- tax_df[taxon, "Genus"]
+  lm(nmr.meta.fungi[, chemical] ~ ., data = nmr.meta.fungi[colnames(nmr.meta.fungi) != chemical]) -> lm1
+  step(lm1, trace = FALSE) -> lm1
+  plot_title <- paste(genus, "vs", chemical, "residuals")
+
+    ggplot(mapping = aes(
+    otu.fungi[, taxon],
+    lm1$residuals)) +
+    geom_point() +
+    geom_smooth(method = "lm") +
+    xlab(taxon) +
+    ylab(chemical) +
+    ggtitle(plot_title)
+
+    
+    if (askYesNo("Save plot?")){
+      ggsave(paste("~/Documents/Classes/MB 599/Plots/", plot_title, ".png", sep = ""))
+  }
+}
+
+```
+
+Create a simple plot of a fungal species vs a chemical. 
+```{r}
+plot_fungi <- function(taxon, chemical){
+  tax_df <- data.frame(tax_table(dffungi))
+  genus <- tax_df[taxon, "Genus"]
+  plot_title <- paste(genus, "vs", chemical)
+
+    ggplot(mapping = aes(
+    otu.fungi[, taxon],
+    nmr.meta.fungi[, chemical])) +
+    geom_point() +
+    geom_smooth(method = "lm") +
+    xlab(taxon) +
+    ylab(chemical) +
+    ggtitle(plot_title)
+  
+  if (askYesNo("Save plot?")){
+    ggsave(paste("~/Documents/Classes/MB 599/Plots/", plot_title, ".png", sep = ""))
+  }
+}
+
+```
+
+
+### Bacteria
+
+(Everything below is the same process as above)
+
+Same as in NMR_Findings_Initial, but ignoring more uninteresting chemicals. 
+```{r}
+# OTU table for fungi
+# Only worry about genera
+dfbacteria <- tax_glom(dfbacteria, taxrank = "Genus")
+
+otu.bacte <- otu_table(dfbacteria)
+otu.bacte <- otu.bacte[, intersect(rownames(nmr.meta), colnames(otu.bacte))]
+dim(otu.bacte)
+
+otu.bacte <- sweep(otu.bacte, 2, colSums(otu.bacte), "/")
+# Require that at each taxon is present at at least 5% in at least 3 samples
+otu.bacte <- t(na.exclude(otu.bacte[rowSums(otu.bacte > 0.001) > 2, ]))
+nmr.meta.bacteria <- nmr.meta[intersect(rownames(nmr.meta), rownames(otu.bacte)), 15:42]
+nmr.meta.bacteria <- subset(nmr.meta.bacteria, select = c(
+  -X2.Hydroxyisobutyrate,
+  -X2.Hydroxyisovalerate,
+  -X4.Guanidinobutanoate,
+  -Caffeine,
+  -Glucuronic.acid,
+  -Glycerol,
+  -Citraconate
+    )
+  )
+mean_normalize <- function(vec) {
+  return(vec / mean(vec))
+}
+nmr.meta.bacteria[, 2:dim(nmr.meta.bacteria)[2]] <- apply(
+  nmr.meta.bacteria[, 2:dim(nmr.meta.bacteria)[2]], 
+  2, 
+  mean_normalize
+  )
+
+```
+
+For each taxon, make a model using all the chemicals as explanatory variables, then use stepwise regression to find a stronger model. This code automatically does FDR correction for the variables included, but DOES NOT apply necessary corrections for the model selection process. 
+```{r}
+tax_df <- data.frame(tax_table(dfbacteria))
+
+pvals <- c()
+for (species in colnames(otu.bacte)) {
+  model.initial <- lm(otu.bacte[, species] ~ Age..days. : ., data = nmr.meta.bacteria)
+  #model.final <- summary(model.initial)
+  model.final <- summary(step(model.initial, trace = FALSE))
+  pvals <- append(pvals, model.final$coefficients[, 4])
+  #adjust_p_values_multiple(models)
+}
+pvals_adj <- p.adjust(pvals)
+for (species in colnames(otu.bacte)) {
+  model.initial <- lm(otu.bacte[, species] ~ Age..days. : ., data = nmr.meta.bacteria)
+  #model.final <- summary(model.initial)
+  model.final <- summary(step(model.initial, trace = FALSE))
+  n <- length(model.final$coefficients[, 4])
+  model.final$coefficients[, 4] <- pvals_adj[1:n]
+  pvals_adj < pvals_adj[n + 1:length(pvals)]
+  print(paste(species, " (", tax_df[species, "Genus"], "):", sep = ""))
+  print(model.final)
+  #print(pvals_adj)
+  #print(n)
+}
+
+```
+
+Create a linear model using one chemical as the response variable and all others as explanatory variables. Then plot the residuals vs. some species of interest. 
+```{r}
+plot_resid_bacteria <- function(taxon, chemical){
+  tax_df <- data.frame(tax_table(dfbacteria))
+  genus <- tax_df[taxon, "Genus"]
+  lm(nmr.meta.bacteria[, chemical] ~ ., data = nmr.meta.bacteria[colnames(nmr.meta.bacteria) != chemical]) -> lm1
+  step(lm1, trace = FALSE) -> lm1
+  plot_title <- paste(genus, "vs", chemical, "residuals")
+
+  ggplot(mapping = aes(
+    otu.bacte[, taxon],
+    lm1$residuals)) +
+    geom_point() +
+    geom_smooth(method = "lm") +
+    xlab(taxon) +
+    ylab(chemical) +
+    ggtitle(plot_title)
+    
+    if (askYesNo("Save plot?")){
+      ggsave(paste("~/Documents/Classes/MB 599/Plots/", plot_title, ".png", sep = ""))
+  }
+}
+
+```
+
+Create a simple plot of a fungal species vs a chemical. 
+```{r}
+plot_bacteria <- function(taxon, chemical){
+  tax_df <- data.frame(tax_table(dfbacteria))
+  genus <- tax_df[taxon, "Genus"]
+  lm(nmr.meta.bacteria[, chemical] ~ ., data = nmr.meta.bacteria[colnames(nmr.meta.bacteria) != chemical]) -> lm1
+  step(lm1, trace = FALSE) -> lm1
+  plot_title <- paste(genus, "vs", chemical)
+
+  ggplot(mapping = aes(
+    otu.bacte[, taxon],
+    nmr.meta.bacteria[, chemical])) +
+    geom_point() +
+    geom_smooth(method = "lm") +
+    xlab(taxon) +
+    ylab(chemical) +
+    ggtitle(plot_title)
+
+  if (askYesNo("Save plot?")){
+    ggsave(paste("~/Documents/Classes/MB 599/Plots/", plot_title, ".png", sep = ""))
+  }
+}
+# test the function.
+ggplot(mapping = aes(
+    otu.bacte[, "ASV127"],
+    nmr.meta.bacteria[, "Gluconic.acid"])) +
+    geom_point() +
+    geom_smooth(method = "lm")
+
+plot_bacteria("ASV127", "Acetic.Acid")
+
+```

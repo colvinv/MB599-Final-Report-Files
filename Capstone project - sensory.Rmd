@@ -1,0 +1,654 @@
+---
+title: "Capstone Project"
+author: "Tori Colvin"
+date: "5/7/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#update.packages(ask=FALSE)
+library(tidyverse)
+library(ggplot2)
+#install.packages("ggpubr")
+library(ggpubr)
+#install.packages("reshape2")
+library(reshape2)
+#install.packages("gplots")
+library(gplots)
+#install.packages("psych")
+library(psych)
+```
+
+```{r}
+# Import data to make boxplots of sensory scores vs taste compounds
+boxplot_data<-read.csv("Sensory boxplots.csv",skip=139)
+boxplot_data<-boxplot_data[1:35]
+boxplot_data<-boxplot_data%>%
+  filter(Sensory.Sweet!="NA")%>%
+  filter(Sensory.Sour!="NA")%>%
+  filter(Sensory.Tart!="NA")
+boxplot_data$Sensory.Sweet<-factor(boxplot_data$Sensory.Sweet,levels=c("Not Enough","JAR","Too Much"))
+boxplot_data$Sensory.Sour<-factor(boxplot_data$Sensory.Sour,levels=c("Not Enough","JAR","Too Much"))
+boxplot_data$Sensory.Tart<-factor(boxplot_data$Sensory.Tart,levels=c("Not Enough","JAR","Too Much"))
+```
+
+
+```{r}
+# Making boxplots of sensory scores vs taste compounds
+# Sweet
+ggplot(data=boxplot_data,aes(Sensory.Sweet,Acetic.Acid,color=Sensory.Sweet))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sweet,Caffeine,color=Sensory.Sweet))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sweet,Ethanol,color=Sensory.Sweet))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sweet,Formic.acid,color=Sensory.Sweet))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sweet,Fructose,color=Sensory.Sweet))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sweet,Gallic.acid,color=Sensory.Sweet))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sweet,Gluconic.acid,color=Sensory.Sweet))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sweet,Glucose,color=Sensory.Sweet))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sweet,Glycine,color=Sensory.Sweet))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sweet,Isobutyric.acid,color=Sensory.Sweet))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sweet,Lactic.acid,color=Sensory.Sweet))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sweet,Succinic.acid,color=Sensory.Sweet))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sweet,Sucrose,color=Sensory.Sweet))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sweet,Tartaric.acid,color=Sensory.Sweet))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sweet,Total.Sugar,color=Sensory.Sweet))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sweet,Total.Sweet,color=Sensory.Sweet))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sweet,Total.Sour,color=Sensory.Sweet))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sweet,Total.Tart,color=Sensory.Sweet))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+
+# Sour
+ggplot(data=boxplot_data,aes(Sensory.Sour,Acetic.Acid,color=Sensory.Sour))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sour,Caffeine,color=Sensory.Sour))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sour,Ethanol,color=Sensory.Sour))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sour,Formic.acid,color=Sensory.Sour))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sour,Fructose,color=Sensory.Sour))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sour,Gallic.acid,color=Sensory.Sour))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sour,Gluconic.acid,color=Sensory.Sour))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sour,Glucose,color=Sensory.Sour))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sour,Glycine,color=Sensory.Sour))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sour,Isobutyric.acid,color=Sensory.Sour))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sour,Lactic.acid,color=Sensory.Sour))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sour,Succinic.acid,color=Sensory.Sour))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sour,Sucrose,color=Sensory.Sour))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sour,Tartaric.acid,color=Sensory.Sour))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sour,Total.Sugar,color=Sensory.Sour))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sour,Total.Sweet,color=Sensory.Sour))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sour,Total.Sour,color=Sensory.Sour))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Sour,Total.Tart,color=Sensory.Sour))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+
+# Tart
+ggplot(data=boxplot_data,aes(Sensory.Tart,Acetic.Acid,color=Sensory.Tart))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Tart,Caffeine,color=Sensory.Tart))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Tart,Ethanol,color=Sensory.Tart))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Tart,Formic.acid,color=Sensory.Tart))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Tart,Fructose,color=Sensory.Tart))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Tart,Gallic.acid,color=Sensory.Tart))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Tart,Gluconic.acid,color=Sensory.Tart))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Tart,Glucose,color=Sensory.Tart))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Tart,Glycine,color=Sensory.Tart))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Tart,Isobutyric.acid,color=Sensory.Tart))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Tart,Lactic.acid,color=Sensory.Tart))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Tart,Succinic.acid,color=Sensory.Tart))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Tart,Sucrose,color=Sensory.Tart))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Tart,Tartaric.acid,color=Sensory.Tart))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Tart,Total.Sugar,color=Sensory.Tart))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Tart,Total.Sweet,color=Sensory.Tart))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Tart,Total.Sour,color=Sensory.Tart))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+ggplot(data=boxplot_data,aes(Sensory.Tart,Total.Tart,color=Sensory.Tart))+
+  geom_boxplot()+
+  geom_point()+
+  geom_jitter()
+```
+
+```{r}
+# Spearman Tests
+# Import data to run spearman tests on sensory scores vs taste compounds
+spear_data<-read.csv("Sensory spearman.csv",skip=206)
+spear_data<-spear_data[1:35]
+spear_data<-spear_data%>%
+  filter(Sensory.Sweet!="NA")%>%
+  filter(Sensory.Sour!="NA")%>%
+  filter(Sensory.Tart!="NA")%>%
+  select(Sample.judge,Sensory.Sweet,Sensory.Sour,Sensory.Tart,Acetic.Acid,Caffeine,Ethanol,Formic.acid,Fructose,Gallic.acid,Gluconic.acid,Glucose,Glycine,Isobutyric.acid,Lactic.acid,Succinic.acid,Sucrose,Tartaric.acid,Total.Sweet,Total.Sour,Total.Tart)
+spear_data
+```
+
+```{r}
+# Spearman tests adjusting for multiple comparisons for sensory scores vs taste compounds
+sensory_y<-spear_data[2:4]
+sensory_x<-spear_data[5:21]
+sensory_cor<-corr.test(sensory_x,sensory_y,method="spearman",adjust="fdr")
+sensory_cor$r
+sensory_cor$p
+write.csv(sensory_cor$r,"Sensory correlations.csv")
+write.csv(sensory_cor$p,"Sensory correlations p-values.csv")
+```
+
+```{r}
+# Creating a heatmap from spearman test data for sensory scores vs taste compounds
+col<- colorRampPalette(c("red", "white", "blue"))(256)
+sensory_heat<-read.csv("Sensory correlations.csv")
+rownames(sensory_heat) <- sensory_heat[,1] #Assigning row names from 1st column 
+sensory_heat[,1] <- NULL #Removing the first column
+sensory_heat
+sensory_heat<-scale(sensory_heat,center=c(0,0,0),scale=FALSE)
+par(mar=c(7,4,4,2)+0.1) 
+png("sensory_heatmap.png",width=800,height=800)
+heatmap.2(sensory_heat,col=col,trace="none",density.info="none",cexRow=2,cexCol=2,margins=c(12,12),main="Sensory Scores",srtCol=45,key=FALSE)
+dev.off()
+```
+
+
+### Microbial Pops
+
+
+```{r}
+# Import data for fungal and bacterial population relative abundance
+fungi<-read.csv("otu.fungi3.csv")
+bact<-read.csv("otubac2.csv")
+fungi
+bact
+```
+### Fungi
+
+```{r}
+# Create scatterplots of fungi taxa vs taste compounds
+# ASV030 Brettanomyces found in all samples
+ggplot(data=fungi,aes(ASV030,Acetic.Acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+#ggplot(data=fungi,aes(ASV030,Caffeine))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV030,Ethanol))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV030,Formic.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV030,Fructose))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV030,Gallic.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV030,Gluconic.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV030,Glucose))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV030,Glycine))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV030,Isobutyric.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV030,Lactic.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV030,Succinic.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV030,Sucrose))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV030,Tartaric.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV030,Total.Sweet))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV030,Total.Sour))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV030,Total.Tart))+
+  geom_point()+
+  geom_smooth(method="lm")
+
+# ASV034 Issatchenkia found in all samples
+ggplot(data=fungi,aes(ASV034,Acetic.Acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+#ggplot(data=fungi,aes(ASV034,Caffeine))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV034,Ethanol))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV034,Formic.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV034,Fructose))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV034,Gallic.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV034,Gluconic.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV034,Glucose))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV034,Glycine))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV034,Isobutyric.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV034,Lactic.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV034,Succinic.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV034,Sucrose))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV034,Tartaric.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV034,Total.Sweet))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV034,Total.Sour))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV034,Total.Tart))+
+  geom_point()+
+  geom_smooth(method="lm")
+
+# ASV036 Kazachstania found in 5 samples
+ggplot(data=fungi,aes(ASV036,Acetic.Acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+#ggplot(data=fungi,aes(ASV036,Caffeine))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV036,Fructose))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV036,Glucose))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV036,Glycine))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV036,Sucrose))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV036,Tartaric.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV036,Total.Sweet))+
+  geom_point()+
+  geom_smooth(method="lm")
+
+# ASV048 Starmerella found in all samples
+ggplot(data=fungi,aes(ASV048,Acetic.Acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV048,Glycine))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV048,Isobutyric.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV048,Lactic.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV048,Sucrose))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=fungi,aes(ASV048,Tartaric.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+```
+
+```{r}
+# Spearman test adjusting for multiple comparisons for fungal taxa vs taste compounds
+fungi.names<-read.csv("otu.fungi.names.csv")
+fungi_x<-fungi.names[6:21]
+fungi_y<-fungi.names[2:5]
+fungi_cor<-corr.test(fungi_x,fungi_y,method="spearman",adjust="fdr")
+fungi_cor$r
+fungi_cor$p
+write.csv(fungi_cor$r,"Fungi correlations.csv")
+write.csv(fungi_cor$p,"Fungi correlations p-values.csv")
+```
+
+### Bacteria
+
+```{r}
+# Create scatterplots for bacterial taxa vs taste compounds
+# ASV014  found in all samples
+ggplot(data=bact,aes(ASV014,Ethanol))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV014,Total.Sour))+
+  geom_point()+
+  geom_smooth(method="lm")
+cor.test(bact$ASV014,bact$Ethanol,method="spearman") #p=0.672
+cor.test(bact$ASV014,bact$Total.Sour,method="spearman") #p=0.3313
+
+# ASV0047 Arthrospira found in 3 samples
+ggplot(data=bact,aes(ASV047,Acetic.Acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV047,Fructose))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV047,Glycine))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV047,Isobutyric.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV047,Tartaric.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+
+# ASV076 Lactobacillus found in all samples
+ggplot(data=bact,aes(ASV076,Ethanol))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV076,Fructose))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV076,Gallic.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV076,Glucose))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV076,Glycine))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV076,Isobutyric.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV076,Lactic.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV076,Succinic.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV076,Sucrose))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV076,Tartaric.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV076,Total.Sweet))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV076,Total.Sour))+
+  geom_point()+
+  geom_smooth(method="lm")
+
+# ASV127 Gluconacetobacter found in 6 samples
+ggplot(data=bact,aes(ASV127,Ethanol))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV127,Fructose))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV127,Gallic.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV127,Glucose))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV127,Glycine))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV127,Isobutyric.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV127,Lactic.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV127,Succinic.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV127,Sucrose))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV127,Tartaric.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV127,Total.Sweet))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV127,Total.Sour))+
+  geom_point()+
+  geom_smooth(method="lm")
+
+# ASV129
+ggplot(data=bact,aes(ASV129,Acetic.Acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+
+# ASV150 Massilia found in 3 samples
+ggplot(data=bact,aes(ASV150,Ethanol))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV150,Gallic.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV150,Lactic.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV150,Succinic.acid))+
+  geom_point()+
+  geom_smooth(method="lm")
+ggplot(data=bact,aes(ASV150,Total.Sour))+
+  geom_point()+
+  geom_smooth(method="lm")
+
+# ASV172 Pseudomonas found in 3 samples
+ggplot(data=bact,aes(ASV172,Total.Sweet))+
+  geom_point()+
+  geom_smooth(method="lm")
+```
+
+```{r}
+# Spearman test adjusting for multiple comparisons for bacterial taxa vs taste compounds
+bact.names<-read.csv("otu.bact.names.csv")
+bact_x<-bact.names[9:24]
+bact_y<-bact.names[2:8]
+bact_cor<-corr.test(bact_x,bact_y,method="spearman",adjust="fdr")
+bact_cor$r
+bact_cor$p
+write.csv(bact_cor$r,"Bacteria correlations.csv")
+write.csv(bact_cor$p,"Bacteria correlations p-values.csv")
+```
+
+### Heatmap of correlations
+
+```{r}
+# Create a heatmap from fungal and bacterial spearman test correlation results
+col<- colorRampPalette(c("red", "white", "blue"))(256)
+fungi_heat<-read.csv("Fungi correlations.csv")
+bact_heat<-read.csv("Bacteria correlations.csv")
+rownames(fungi_heat) <- fungi_heat[,1] #Assigning row names from 1st column 
+fungi_heat[,1] <- NULL #Removing the first column
+rownames(bact_heat) <- bact_heat[,1] #Assigning row names from 1st column 
+bact_heat[,1] <- NULL #Removing the first column
+fungi_heat
+bact_heat
+fungi_heat<-scale(fungi_heat,center=c(0,0,0,0),scale=FALSE)
+bact_heat<-scale(bact_heat,center=c(0,0,0,0,0,0,0),scale=FALSE)
+fungi_heat
+bact_heat
+par(mar=c(7,4,4,2)+0.1) 
+png("fungi_heatmap.png")
+heatmap.2(fungi_heat,col=col,trace="none",density.info="none",cexRow=1.2,cexCol=1.2,margins=c(12,8),main="Fungi",srtCol=45,key=TRUE,key.title=NA)
+dev.off()
+png("bact_heatmap.png")
+heatmap.2(bact_heat,col=col,trace="none",density.info="none",cexRow=1.2,cexCol=1.2,margins=c(12,8),main="Bacteria",srtCol=45,key=FALSE)
+dev.off()
+```
+
+
+

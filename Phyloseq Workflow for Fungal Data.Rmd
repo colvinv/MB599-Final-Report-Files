@@ -1,0 +1,316 @@
+---
+title: "Phyloseq Work flow for ITS data for Microbiota Succession Analysis"
+output: html_document
+---
+
+Load R packages 
+```{r setup, include=FALSE}
+library(plotly)
+library(phyloseq)
+library(devtools)
+library(ggbiplot)
+library(dplyr)
+library(lme4)
+library(emmeans)
+library(ggplot2)
+library(leaps)
+library(car)
+library(vegan)
+install.packages("remotes")
+remotes::install_github("vmikk/metagMisc")
+library(remotes)
+library(meta)
+```
+
+
+Load phyloseq objects, previously made by KH
+```{r}
+dffungi <- readRDS("~/Documents/Data/HAMS/phyloseq /dffungi.rds") #load the fungal phyloseq object 
+dffungi = filter_taxa(dffungi, function(x) sum(x > 3) > (0.20*length(x)), TRUE) ##Remove taxa not seen more than 3 times in at least 20% of the samples. This protects against an OTU with small mean & trivially large C.V.
+dffungi <- tax_glom(dffungi, taxrank = "Genus") #merge genus-level
+random_tree = rtree(ntaxa(dffungi), rooted=TRUE, tip.label=taxa_names(dffungi))
+plot(random_tree)
+dffungi = merge_phyloseq(dffungi, random_tree)
+dffungi = phyloseq_rm_na_tax(dffungi)
+```
+
+
+Transform ASV table to relative abundance to look at composition of bacteria and fungi at a 
+```{r}
+fung_relative_abun<- transform_sample_counts(dffungi, function(x) x / sum(x) )
+```
+
+```{r}
+# OTU table for fungi
+# Only worry about genera for right now
+tax_table(fung_relative_abun)[, "Genus"] #Need to remove unassigned
+# exclude variables unassigned 
+dffungi.genus <- subset_taxa(fung_relative_abun, Genus != "Unassigned")
+
+otu.fungi <- otu_table(dffungi.genus) #create a data frame of RA
+head(otu.fungi)
+
+# Convert to sample proportions. 
+#otu.fungi = as.data.frame(t(otu.fungi))
+#total = rowSums(otu.fungi)
+#total #total read count
+#otu.fungi <- otu.fungi / total 
+#head(otu.fungi)
+#data = otu.fungi@.Data
+```
+
+
+
+```{r}
+#Phyloseq object with PMAxx 
+dffungi.PMAxx <- subset_samples(dffungi.genus, Source == "Fermentation Batch")
+random_tree = rtree(ntaxa(dffungi.PMAxx), rooted=TRUE, tip.label=taxa_names(dffungi.PMAxx))
+plot(random_tree)
+dffungi.PMAxx = merge_phyloseq(dffungi.PMAxx, random_tree)
+
+#Phyloseq object - SCOBY-based without PMAxx
+dffungi.genus <- subset_samples(dffungi.genus, Sample.Description == "Primary"& PMAxx. == "No")
+#Add random phylogenic tree
+random_tree = rtree(ntaxa(dffungi.genus), rooted=TRUE, tip.label=taxa_names(dffungi.genus))
+plot(random_tree)
+physeq.tree = merge_phyloseq(physeq, NJ.tree)
+
+```
+
+
+alpha diversity
+```{r}
+dffungi.genus@sam_data$Timepoint..Day. = as.numeric(dffungi.genus@sam_data$Timepoint..Day.)
+dffungi.genus <- subset_samples(dffungi.genus,Timepoint..Day. <= 7)
+sample_data(dffungi.genus)$shannon.physeq <- estimate_richness(dffungi.genus, measures="Shannon")
+sample_data(dffungi.genus)$simpson.physeq <- estimate_richness(dffungi.genus, measures="Simpson")
+plot_richness(dffungi.genus, "Timepoint..Day.", measures="Simpson", color="Sample.Type") + theme_bw()
+
+```
+
+Alpha diversity comparison- PMAxx and non-PMAxx
+```{r}
+head(dffungi@sam_data)
+sample_data(dffungi.PMAxx)$simpson.physeq <- estimate_richness(dffungi.PMAxx, measures="Simpson")
+dffungi.PMAxx@sam_data$Timepoint..Day. = as.numeric(dffungi.PMAxx@sam_data$Timepoint..Day.)
+plot_richness(dffungi.PMAxx, "Timepoint..Day.", measures="Simpson", color="PMAxx.") + theme_bw()
+```
+
+
+
+Format simpson dataframe for timepoint analysis
+```{r}
+sample_data(dffungi.genus)$simpson.physeq <- estimate_richness(dffungi.genus, measures="Simpson")
+simpson = dffungi.genus@sam_data$simpson.physeq
+write.csv(simpson,"~/Documents/Data/HAMS/phyloseq /fungsimpson.csv", row.names = TRUE) #export to add replicate ID names
+simpson = dffungi.genus@sam_data$simpson.physeq
+
+
+#load dataset
+#simpson_fungi <- read_csv("Documents/Data/HAMS/phyloseq /simpson.fungi.csv", 
+#+     col_types = cols(X12 = col_skip()))
+simp.fungi = simpson_fungi
+head(simp.fungi)
+class(simp.fungi$Timepoint)
+lmeModel = lmer(Simpson ~ SampleType*Timepoint + (1|ID), data=simp.fungi)
+anova(lmeModel, type = "marginal")
+
+
+```
+
+Format simpson dataframe for timepoint analysis
+```{r}
+sample_data(dffungi.PMAxx)$simpson.physeq <- estimate_richness(dffungi.PMAxx, measures="Simpson")
+simpson.pmaxx = dffungi.PMAxx@sam_data$simpson.physeq
+pma.samps = dffungi.PMAxx@sam_data
+write.csv(simpson.pmaxx,"~/Documents/Data/HAMS/phyloseq /fungisimpsonPMAxx.csv", row.names = TRUE) #export to add replicate ID names
+write.csv(pma.samps,"~/Documents/Data/HAMS/phyloseq /fungisampsPMAxx.csv", row.names = TRUE) #export to add replicate ID names
+
+#load dataset
+#fungi_PMAxx <- read_csv("fungisimpsonPMAxx.csv")
+simp.pmaxx = fungisimpsonPMAxx
+head(simp.pmaxx)
+class(simp.pmaxx$Timepoint)
+lmeModel = lmer(Simpson ~ SampleType*Timepoint + (1|ID), data=simp.pmaxx)
+anova(lmeModel, type = "marginal")
+
+simps_fung <- lm(Simpson~PMAxx*Timepoint+SampleType, data=simp.pmaxx)
+anova(simps_fung)
+
+```
+
+
+```{r}
+plot_bar(dffungi.genus, x="Timepoint..Day.", fill = "Genus") + geom_bar(aes(color=Genus, fill=Genus), stat="identity", position="stack") +  facet_wrap(~Sample.Type)
+```
+
+Format Export otutable to make linear models 
+```{r}
+otu.fungi <- otu_table(dffungi.genus)
+head(otu.fungi)
+write.csv(otu.fungi@.Data,"~/Documents/Data/HAMS/phyloseq /fungusOTU.csv", row.names = TRUE)
+```
+
+
+Build regression plots
+```{r}
+```{r}
+head(fungusOTU)
+tax_table(dffungi.genus)[, "Genus"] #Need to remove unassigned
+#ASV030 "Brettanomyces", ASV034 "Issatchenkia", ASV036 "Kazachstania", ASV038 "Lachancea", ASV048 "Starmerella" 
+
+#ASV030 Brettanomyces
+p = ggplot(fungusOTU, aes(x= Timepoint, y= ASV030, shape = SampleType, color = SampleType)) +     geom_point() + 
+  scale_color_manual(values=c('green', 'darkgreen')) +
+  theme_classic() +
+  geom_smooth(method=lm) 
+p
+
+#ASV034 "Issatchenkia"
+p = ggplot(fungusOTU, aes(x= Timepoint, y= ASV034, shape = SampleType, color = SampleType)) +     geom_point() + 
+  scale_color_manual(values=c('green', 'darkgreen')) +
+  theme_classic() +
+  geom_smooth(method=lm) 
+p
+
+#ASV036 "Kazachstania"
+p = ggplot(fungusOTU, aes(x= Timepoint, y= ASV036, shape = SampleType, color = SampleType)) +     geom_point() + 
+  scale_color_manual(values=c('green', 'darkgreen')) +
+  theme_classic() +
+  geom_smooth(method=lm) 
+p
+
+#ASV038 "Lachancea"
+p = ggplot(fungusOTU, aes(x= Timepoint, y= ASV038, shape = SampleType, color = SampleType)) +     geom_point() + 
+  scale_color_manual(values=c('green', 'darkgreen')) +
+  theme_classic() +
+  geom_smooth(method=lm) 
+p
+
+#ASV048 "Starmerella"
+p = ggplot(fungusOTU, aes(x= Timepoint, y= ASV048, shape = SampleType, color = SampleType)) +     geom_point() + 
+  scale_color_manual(values=c('green', 'darkgreen')) +
+  theme_classic() +
+  geom_smooth(method=lm) 
+p
+```
+
+Build best of fit linear models
+```{r}
+fungusOTU <- read_csv("fungusOTU.csv")
+head(fungusOTU)
+otu_best_ASV030 <- regsubsets(ASV030~., fungusOTU, nbest=10, really.big=T)
+ASV030_best <- summary(otu_best_ASV030)
+p <- rowSums(ASV030_best$which)
+models <- with(ASV030_best,data.frame(p, rss, adjr2, cp, bic))
+which.min(models$cp)
+n <- nrow(fungusOTU)
+models$aic <- with(models, n*log(rss/n)+2*(p+1))
+best_aic <- which.min(models$aic)
+ASV030_best$which[which.min(models$aic),]
+```
+```{r}
+ASV30_model <- lm(ASV030~ASV034+ASV038+ASV048+SampleType, data=fungusOTU)
+vif(ASV30_model)
+anova(ASV30_model)
+```
+
+
+
+
+
+```{r}
+otu_best_ASV034<- regsubsets(ASV034~., fungusOTU, nbest=10, really.big=T)
+ASV034_best <- summary(otu_best_ASV034)
+p <- rowSums(ASV034_best$which)
+models <- with(ASV034_best,data.frame(p, rss, adjr2, cp, bic))
+which.min(models$cp)
+n <- nrow(fungusOTU)
+models$aic <- with(models, n*log(rss/n)+2*(p+1))
+best_aic <- which.min(models$aic)
+ASV034_best$which[which.min(models$aic),]
+```
+
+```{r}
+ASV34_model <- lm(ASV034~ASV030+ASV038+ASV048+SampleType, data=fungusOTU)
+vif(ASV30_model)
+anova(ASV34_model)
+```
+
+
+```{r}
+otu_best_ASV036<- regsubsets(ASV036~., fungusOTU, nbest=10, really.big=T)
+ASV036_best <- summary(otu_best_ASV036)
+p <- rowSums(ASV036_best$which)
+models <- with(ASV036_best,data.frame(p, rss, adjr2, cp, bic))
+which.min(models$cp)
+n <- nrow(fungusOTU)
+models$aic <- with(models, n*log(rss/n)+2*(p+1))
+best_aic <- which.min(models$aic)
+ASV036_best$which[which.min(models$aic),]
+```
+```{r}
+```{r}
+ASV36_model <- lm(ASV036~ASV048, data=fungusOTU)
+vif(ASV36_model)
+anova(ASV36_model)
+```
+
+```
+
+```{r}
+otu_best_ASV038 <- regsubsets(ASV038~., fungusOTU, nbest=10, really.big=T)
+ASV038_best <- summary(otu_best_ASV038)
+p <- rowSums(ASV038_best$which)
+models <- with(ASV038_best,data.frame(p, rss, adjr2, cp, bic))
+which.min(models$cp)
+n <- nrow(fungusOTU)
+models$aic <- with(models, n*log(rss/n)+2*(p+1))
+best_aic <- which.min(models$aic)
+ASV038_best$which[which.min(models$aic),]
+```
+
+```{r}
+ASV38_model <- lm(ASV038~ASV048+ASV030+ASV034, data=fungusOTU)
+vif(ASV38_model)
+anova(ASV38_model)
+```
+
+
+
+```{r}
+```
+```{r}
+otu_best_ASV048 <- regsubsets(ASV048~., fungusOTU, nbest=10, really.big=T)
+ASV048_best <- summary(otu_best_ASV048)
+p <- rowSums(ASV048_best$which)
+models <- with(ASV048_best,data.frame(p, rss, adjr2, cp, bic))
+which.min(models$cp)
+n <- nrow(fungusOTU)
+models$aic <- with(models, n*log(rss/n)+2*(p+1))
+best_aic <- which.min(models$aic)
+ASV048_best$which[which.min(models$aic),]
+```
+
+```{r}
+ASV48_model <- lm(ASV048~ASV038+ASV030+ASV034, data=fungusOTU)
+vif(ASV48_model)
+anova(ASV48_model)
+```
+
+Create ordinate plot to compare PMAxx treated and non-treated samples 
+```{r}
+wUF.ordu = ordinate(dffungi, method="NMDS", distance="unifrac", weighted=TRUE)
+fungi.ord <- ordinate(dffungi, "NMDS", "bray")
+par(mfrow=c(1,1))
+
+plot(fungi.ord)
+
+wunifrac_dist = phyloseq::distance(dffungi, method="unifrac", weighted=F)
+ordination = ordinate(dffungi, method="PCoA", distance=wunifrac_dist)
+plot_ordination(dffungi, ordination, color="PMAxx.") + theme(aspect.ratio=1) + 
+  scale_color_manual(values=c('darkgoldenrod2', 'cornsilk4')) + theme_bw()
+  
+adonis(wunifrac_dist ~ sample_data(dffungi)$PMAxx.)  
+```
+

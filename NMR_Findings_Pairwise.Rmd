@@ -1,0 +1,258 @@
+---
+title: "NMR Findings, Pairwise"
+author: "Zach A. Bright"
+date: "5/4/2021"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: true
+---
+
+    
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(plotly)
+library(phyloseq)
+library(devtools)
+library(ggbiplot)
+library("dplyr")
+library(vegan)
+
+# Import and Format the Data
+# Load NMR data. 
+nmr.data <- read.csv("nmr_data.csv")
+# nmr.data$Sample.ID <- as.numeric(sub("A", "", nmr.data$Sample.ID))
+# Load meta data
+meta.data <- read.csv("sample_metadata.csv")
+# Extract only the NMR data samples.
+meta.data <- subset(meta.data, Sample.Description == "Primary" & PMAxx. == "")
+# meta.data <- meta.data[meta.data$Sample.Description == "Primary" && meta.data$PMAxx., ]
+# Merge the dataframes.
+nmr.meta <- merge(meta.data, nmr.data)
+# Sample IDs must match those of other files. 
+nmr.meta$Sample.ID <- sub("A", "", nmr.meta$Sample.ID)
+nmr.meta$Sample.ID <- sub("^", "HA", nmr.meta$Sample.ID)
+rownames(nmr.meta) <- nmr.meta$Sample.ID
+nmr.meta["Age..days."] <- as.numeric(nmr.meta$Age..days.)
+```
+
+## NMR-detected molecules
+```{r phyloseq setup, include=FALSE}
+# These phyloseq objects were made by Keisha Rose Harrison.
+dfbacteria <- readRDS("/home/zachary/Documents/Classes/MB 599/phyloseq objects/dfbacteria.rds")
+dffungi <- readRDS("/home/zachary/Documents/Classes/MB 599/phyloseq objects/dffungi.rds")
+```
+
+```{r, include = FALSE}
+# Note: We need a function that does this for multiple linear models. 
+adjust_p_values <- function(model_summary) {
+  pvals <- model_summary$coefficients[, 4]
+  model_summary$coefficients[, 4] <- p.adjust(pvals)
+  return(model_summary)
+}
+
+adjust_p_values_multiple <- function(model_list) {
+  pvals <- c()
+  for(model in model_list) {
+    pvals <- append(pvals, model$coefficients[, 4])
+  }
+  pvals_adj <- p.adjust(pvals)
+  for(model in model_list) {
+    n <- length(model$coefficients[, 4])
+    model$coefficient[, 4] <- pvals_adj[1:n]
+    pvals_adj < pvals_adj[n:length(pvals)]
+  }
+  return(model_list)
+}
+```
+
+### Fungi
+
+```{r}
+# OTU table for fungi
+# Only worry about genera
+dffungi <- tax_glom(dffungi, taxrank = "Genus")
+
+otu.fungi <- otu_table(dffungi)
+otu.fungi <- otu.fungi[, intersect(rownames(nmr.meta), colnames(otu.fungi))]
+dim(otu.fungi)
+
+otu.fungi <- sweep(otu.fungi, 2, colSums(otu.fungi), "/")
+# Require that at each taxon is present at at least 5% in at least 3 samples
+otu.fungi <- t(na.exclude(otu.fungi[rowSums(otu.fungi > 0.001) > 2, ]))
+nmr.meta.fungi <- nmr.meta[intersect(rownames(nmr.meta), rownames(otu.fungi)), 15:42]
+nmr.meta.fungi <- subset(nmr.meta.fungi, select = c(
+  -X2.Hydroxyisobutyrate,
+  -X2.Hydroxyisovalerate,
+  -X4.Guanidinobutanoate,
+  -Caffeine,
+  -Glucuronic.acid,
+  -Glycerol
+    )
+  )
+```
+
+
+Same as NMR_Findings_Additional, but only make pairwise comparisons.  Don't do stepwise regression. Correct for all the comparisons being made using FDR. 
+
+This model uses interaction with age...
+```{r}
+tax_df <- data.frame(tax_table(dffungi))
+
+pvals <- c()
+for (species in colnames(otu.fungi)) {
+  for (chemical in colnames(nmr.meta.fungi[, 2:length(colnames(nmr.meta.fungi))])){
+    model.initial <- lm(otu.fungi[, species] ~ Age..days. : nmr.meta.fungi[, chemical], data = nmr.meta.fungi)
+    model.final <- summary(model.initial)
+    pvals <- append(pvals, model.final$coefficients[, 4])
+  }
+
+}
+pvals_adj <- p.adjust(pvals)
+for (species in colnames(otu.fungi)) {
+  for (chemical in colnames(nmr.meta.fungi[, 2:length(colnames(nmr.meta.fungi))])){
+    model.initial <- lm(otu.fungi[, species] ~ Age..days. : nmr.meta.fungi[, chemical], data = nmr.meta.fungi)
+    model.final <- summary(model.initial)
+    n <- length(model.final$coefficients[, 4])
+    model.final$coefficients[, 4] <- pvals_adj[1:n]
+    pvals_adj < pvals_adj[n + 1:length(pvals)]
+    if (length(model.final$coefficients[, "Pr(>|t|)"]) != 2){
+      print(model.final)
+      print(species)
+      print(chemical)
+      next
+    }
+    if (model.final$coefficients[, "Pr(>|t|)"][2] < 0.05){
+      print(paste(species, " (", tax_df[species, "Genus"], ")", ":", sep = ""))
+      print(model.final)
+    }
+  }
+}
+
+```
+
+... And this model does not. 
+```{r}
+tax_df <- data.frame(tax_table(dffungi))
+
+pvals <- c()
+for (species in colnames(otu.fungi)) {
+  for (chemical in colnames(nmr.meta.fungi[, 2:length(colnames(nmr.meta.fungi))])){
+    model.initial <- lm(otu.fungi[, species] ~ nmr.meta.fungi[, chemical], data = nmr.meta.fungi)
+    model.final <- summary(model.initial)
+    pvals <- append(pvals, model.final$coefficients[, 4])
+  }
+
+}
+pvals_adj <- p.adjust(pvals)
+for (species in colnames(otu.fungi)) {
+  for (chemical in colnames(nmr.meta.fungi[, 2:length(colnames(nmr.meta.fungi))])){
+    model.initial <- lm(otu.fungi[, species] ~ nmr.meta.fungi[, chemical], data = nmr.meta.fungi)
+    model.final <- summary(model.initial)
+    n <- length(model.final$coefficients[, 4])
+    model.final$coefficients[, 4] <- pvals_adj[1:n]
+    pvals_adj < pvals_adj[n + 1:length(pvals)]
+    if (model.final$coefficients[, "Pr(>|t|)"][2] < 0.05){
+      print(paste(species, " (", tax_df[species, "Genus"], ")", ":", sep = ""))
+      print(model.final)
+    }
+  }
+}
+
+```
+
+### Bacteria
+Same as above, but with bacteria. 
+```{r}
+# OTU table for fungi
+# Only worry about genera
+dfbacteria <- tax_glom(dfbacteria, taxrank = "Genus")
+
+otu.bacte <- otu_table(dfbacteria)
+otu.bacte <- otu.bacte[, intersect(rownames(nmr.meta), colnames(otu.bacte))]
+dim(otu.bacte)
+
+otu.bacte <- sweep(otu.bacte, 2, colSums(otu.bacte), "/")
+# Require that at each taxon is present at at least 5% in at least 3 samples
+otu.bacte <- t(na.exclude(otu.bacte[rowSums(otu.bacte > 0.001) > 2, ]))
+nmr.meta.bacteria <- nmr.meta[intersect(rownames(nmr.meta), rownames(otu.bacte)), 15:42]
+nmr.meta.bacteria <- subset(nmr.meta.bacteria, select = c(
+  -X2.Hydroxyisobutyrate,
+  -X2.Hydroxyisovalerate,
+  -X4.Guanidinobutanoate,
+  -Caffeine,
+  -Glucuronic.acid,
+  -Glycerol
+    )
+  )
+mean_normalize <- function(vec) {
+  return(vec / mean(vec))
+}
+nmr.meta.bacteria[, 2:dim(nmr.meta.bacteria)[2]] <- apply(
+  nmr.meta.bacteria[, 2:dim(nmr.meta.bacteria)[2]], 
+  2, 
+  mean_normalize
+  )
+
+```
+
+Same as NMR_Findings_Additional, but only make pairwise comparisons.  Don't do stepwise regression. Correct for all the comparisons being made using FDR. 
+
+This model uses interaction with age...
+```{r}
+tax_df <- data.frame(tax_table(dfbacteria))
+
+pvals <- c()
+for (species in colnames(otu.bacte)) {
+  for (chemical in colnames(nmr.meta.bacteria[, 2:length(colnames(nmr.meta.bacteria))])){
+    model.initial <- lm(otu.bacte[, species] ~ Age..days. : nmr.meta.bacteria[, chemical], data = nmr.meta.bacteria)
+    model.final <- summary(model.initial)
+    pvals <- append(pvals, model.final$coefficients[, 4])
+  }
+
+}
+pvals_adj <- p.adjust(pvals)
+for (species in colnames(otu.bacte)) {
+  for (chemical in colnames(nmr.meta.bacteria[, 2:length(colnames(nmr.meta.bacteria))])){
+    model.initial <- lm(otu.bacte[, species] ~ Age..days. : nmr.meta.bacteria[, chemical], data = nmr.meta.bacteria)
+    model.final <- summary(model.initial)
+    n <- length(model.final$coefficients[, 4])
+    model.final$coefficients[, 4] <- pvals_adj[1:n]
+    pvals_adj < pvals_adj[n + 1:length(pvals)]
+    if (model.final$coefficients[, "Pr(>|t|)"][2] < 0.05){
+      print(paste(species, " (", tax_df[species, "Genus"], ")", ":", sep = ""))
+      print(model.final)
+    }
+  }
+}
+```
+
+... And this one doesn't.
+```{r}
+tax_df <- data.frame(tax_table(dfbacteria))
+
+pvals <- c()
+for (species in colnames(otu.bacte)) {
+  for (chemical in colnames(nmr.meta.bacteria[, 2:length(colnames(nmr.meta.bacteria))])){
+    model.initial <- lm(otu.bacte[, species] ~ nmr.meta.bacteria[, chemical], data = nmr.meta.bacteria)
+    model.final <- summary(model.initial)
+    pvals <- append(pvals, model.final$coefficients[, 4])
+  }
+
+}
+pvals_adj <- p.adjust(pvals)
+for (species in colnames(otu.bacte)) {
+  for (chemical in colnames(nmr.meta.bacteria[, 2:length(colnames(nmr.meta.bacteria))])){
+    model.initial <- lm(otu.bacte[, species] ~ nmr.meta.bacteria[, chemical], data = nmr.meta.bacteria)
+    model.final <- summary(model.initial)
+    n <- length(model.final$coefficients[, 4])
+    model.final$coefficients[, 4] <- pvals_adj[1:n]
+    pvals_adj < pvals_adj[n + 1:length(pvals)]
+    if (model.final$coefficients[, "Pr(>|t|)"][2] < 0.05){
+      print(paste(species, " (", tax_df[species, "Genus"], ")", ":", sep = ""))
+      print(model.final)
+    }
+  }
+}
+```

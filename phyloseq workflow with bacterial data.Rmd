@@ -1,0 +1,300 @@
+---
+title: "bacteria phyloseq"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+Load R packages 
+```{r setup, include=FALSE}
+library(plotly)
+library(phyloseq)
+library(devtools)
+library(dplyr)
+library(lme4)
+library(emmeans)
+library(lme4)
+library(emmeans)
+library(ggplot2)
+library(leaps)
+library(car)
+library(ape)
+```
+
+
+Load phyloseq objects, previously made by KH
+```{r}
+dfbacteria <- readRDS("~/Documents/Data/HAMS/phyloseq /dfbacteria.rds") #load the bacteria phyloseq object
+dfbacteria = filter_taxa(dfbacteria, function(x) sum(x > 3) > (0.20*length(x)), TRUE) ##Remove taxa not seen more than 3 times in at least 20% of the samples. This protects against an OTU with small mean & trivially large C.V.
+dfbacteria <- tax_glom(dfbacteria, taxrank = "Genus") #merge genus-level
+```
+
+
+Transform ASV table to relative abundance to look at composition of bacteria and fungi at a 
+```{r}
+bact_relative_abun<- transform_sample_counts(dfbacteria, function(x) x / sum(x) )
+```
+
+```{r}
+random_tree = rtree(ntaxa(dfbacteria), rooted=TRUE, tip.label=taxa_names(dfbacteria))
+plot(random_tree)
+dfbacteria = merge_phyloseq(dfbacteria, random_tree)
+
+# OTU table for bacteria
+# Only worry about genera for right now
+tax_table(bact_relative_abun)[, "Genus"] #Need to remove unassigned
+# exclude variables unassigned 
+dfbact.genus <- subset_taxa(bact_relative_abun, Genus != "Unassigned")
+
+otu.bac <- otu_table(dfbact.genus) #create a data frame of RA
+head(otu.bac)
+
+# Convert to sample proportions. 
+#otu.fungi = as.data.frame(t(otu.fungi))
+#total = rowSums(otu.fungi)
+#total #total read count
+#otu.fungi <- otu.fungi / total 
+#head(otu.fungi)
+#data = otu.fungi@.Data
+```
+
+
+
+```{r}
+#Phyloseq object with PMAxx 
+dfbact.PMAxx <- subset_samples(dfbact.genus, Source == "Fermentation Batch")
+
+#Phyloseq object - SCOBY-based without PMAxx
+dfbact.genus <- subset_samples(dfbact.genus, Sample.Description == "Primary"& PMAxx. == "No")
+
+dfbacteria@sam_data$Timepoint..Day. = as.numeric(dfbacteria@sam_data$Timepoint..Day.)
+dfbacteria <- subset_samples(dfbacteria,Timepoint..Day. <= 7)
+
+```
+
+
+alpha diversity
+```{r}
+dfbact.genus@sam_data$Timepoint..Day. = as.numeric(dfbact.genus@sam_data$Timepoint..Day.)
+dfbact.genus <- subset_samples(dfbact.genus,Timepoint..Day. <= 7)
+sample_data(dfbact.genus)$shannon.physeq <- estimate_richness(dfbact.genus, measures="Shannon")
+sample_data(dfbact.genus)$simpson.physeq <- estimate_richness(dfbact.genus, measures="Simpson")
+plot_richness(dfbact.genus, "Timepoint..Day.", measures="Simpson", color="Sample.Type") + theme_bw()
+
+```
+
+
+
+```{r}
+Alpha diversity comparison- PMAxx and non-PMAxx
+```{r}
+sample_data(dfbact.PMAxx)$simpson.physeq <- estimate_richness(dfbact.PMAxx, measures="Simpson")
+dfbact.PMAxx@sam_data$Timepoint..Day. = as.numeric(dfbact.PMAxx@sam_data$Timepoint..Day.)
+plot_richness(dfbact.PMAxx, "Timepoint..Day.", measures="Simpson", color="PMAxx.") + theme_bw()
+```
+
+
+
+Format simpson dataframe
+```{r}
+simpson = dfbact.genus@sam_data$simpson.physeq
+write.csv(simpson,"~/Documents/Data/HAMS/phyloseq /bacsimpson.csv", row.names = TRUE) #export to add replicate ID names
+
+#load dataset
+#simpson_bacteria <- read_csv("Documents/Data/HAMS/phyloseq /simpson.bacteria.csv")"
+simp.bact = simpson_bacteria
+head(simp.bact)
+class(simp.bact$Timepoint)
+lmeModel = lmer(Simpson ~ SampleType*Timepoint + (1|ID), data=simp.bact)
+anova(lmeModel, type='marginal')
+```
+
+Post-hoc for linear mixed model
+```{r}
+emmeans(lmeModel, pairwise ~ SampleType)
+```
+
+Format Simpson Comparison for PMAxx and non-PMAxx
+```{r}
+sample_data(dfbact.PMAxx)$simpson.physeq <- estimate_richness(dfbact.PMAxx, measures="Simpson")
+simpson.pmaxx.b = dfbact.PMAxx@sam_data$simpson.physeq
+write.csv(simpson.pmaxx.b,"~/Documents/Data/HAMS/phyloseq /bacteriasimpsonPMAxx.csv", row.names = TRUE) #export to add replicate ID names
+
+#load dataset
+#bacteriasimpsonPMAxx <- read_csv("bacteriasimpsonPMAxx.csv")
+simp.pmaxx = bacteriasimpsonPMAxx
+head(simp.pmaxx)
+class(simp.pmaxx$Timepoint)
+lmeModel = lmer(Simpson ~ Timepoint + (1|ID), data=simp.pmaxx)
+anova(lmeModel, type = "marginal")
+summary(lmeModel)
+
+simps_bact <- lm(Simpson~PMAxx*Timepoint+SampleType, data=simp.pmaxx)
+anova(simps_bact)
+
+```
+
+
+```{r}
+dfbact.genus@sam_data$Timepoint..Day. = as.character(dfbact.genus@sam_data$Timepoint..Day.)
+plot_bar(dfbact.genus, x="Timepoint..Day.", fill = "Genus") + geom_bar(aes(color=Genus, fill=Genus), stat="identity", position="stack") +  facet_wrap(~Sample.Type)
+```
+
+Format Export otutable to make linear models 
+```{r}
+otu.bacteria <- otu_table(dfbact.genus)
+write.csv(otu.bacteria@.Data,"~/Documents/Data/HAMS/phyloseq /bactOTU.csv", row.names = TRUE)
+otu_bacteria <- read_csv("Documents/Data/HAMS/phyloseq /otu.bacteria.csv", 
++     col_types = cols(X7 = col_skip(), X8 = col_skip(), 
++         X9 = col_skip(), X10 = col_skip(), 
++         X11 = col_skip(), X12 = col_skip(), 
++         X13 = col_skip()))
+```
+
+Build regression plots
+```{r}
+```{r}
+bacteriaOTU = otu_bacteria
+head(otu_bacteria)
+tax_table(dfbact.genus)[, "Genus"] #Need to remove unassigned
+
+# ASV076 "Lactobacillus"    ASV125 "Acetobacter"      ASV127 "Gluconacetobacter"
+#ASV129 "Tanticharoenia"  
+
+# ASV076 "Lactobacillus"
+p = ggplot(bacteriaOTU, aes(x= Timepoint, y= ASV076, shape = SampleType, color = SampleType)) +     geom_point() + 
+  scale_color_manual(values=c('lightsteelblue', 'mediumblue')) +
+  theme_classic() +
+  geom_smooth(method=lm) 
+p
+
+#ASV125 "Acetobacter" 
+p = ggplot(bacteriaOTU, aes(x= Timepoint, y= ASV125, shape = SampleType, color = SampleType)) +     geom_point() + 
+  scale_color_manual(values=c('lightsteelblue', 'mediumblue')) +
+  theme_classic() +
+  geom_smooth(method=lm) 
+p
+
+# ASV127 "KOMAGATEIBACTER"
+p = ggplot(bacteriaOTU, aes(x= Timepoint, y= ASV127, shape = SampleType, color = SampleType)) +     geom_point() + 
+  scale_color_manual(values=c('lightsteelblue', 'mediumblue')) +
+  theme_classic() +
+  geom_smooth(method=lm) 
+p
+
+#ASV129 "Tantechorenia"
+p = ggplot(bacteriaOTU, aes(x= Timepoint, y= ASV129, shape = SampleType, color = SampleType)) +     geom_point() + 
+  scale_color_manual(values=c('purple', 'darkpurple')) +
+  theme_classic() +
+  geom_smooth(method=lm) 
+p
+
+```
+
+
+
+Build ordinate plots
+```{r}
+## to do stilllllll
+```
+
+Use AIC to determine best linear model for major genera
+```{r}
+
+otu_best_ASV076<- regsubsets(ASV076~., bacteriaOTU, nbest=10, really.big=T)
+ASV076_best <- summary(otu_best_ASV076)
+p <- rowSums(ASV076_best$which)
+models <- with(ASV076_best,data.frame(p, rss, adjr2, cp, bic))
+which.min(models$cp)
+n <- nrow(fungusOTU)
+models$aic <- with(models, n*log(rss/n)+2*(p+1))
+best_aic <- which.min(models$aic)
+ASV076_best$which[which.min(models$aic),]
+```
+
+```
+```{r}
+ASV76_model <- lm(ASV076~ASV125+ASV127+ASV129+Timepoint+SampleType, data=bacteriaOTU)
+vif(ASV76_model)
+anova(ASV76_model)
+```
+
+
+Use AIC to determine best linear model for major genera
+```{r}
+
+otu_best_ASV125<- regsubsets(ASV125~., bacteriaOTU, nbest=10, really.big=T)
+ASV125_best <- summary(otu_best_ASV125)
+p <- rowSums(ASV125_best$which)
+models <- with(ASV125_best,data.frame(p, rss, adjr2, cp, bic))
+which.min(models$cp)
+n <- nrow(fungusOTU)
+models$aic <- with(models, n*log(rss/n)+2*(p+1))
+best_aic <- which.min(models$aic)
+ASV125_best$which[which.min(models$aic),]
+```
+
+```
+```{r}
+ASV125_model <- lm(ASV125~ASV076+ASV127+ASV129+Timepoint, data=bacteriaOTU)
+vif(ASV125_model)
+anova(ASV125_model)
+```
+
+Use AIC to determine best linear model for major genera
+```{r}
+
+otu_best_ASV127<- regsubsets(ASV127~., bacteriaOTU, nbest=10, really.big=T)
+ASV127_best <- summary(otu_best_ASV127)
+p <- rowSums(ASV127_best$which)
+models <- with(ASV127_best,data.frame(p, rss, adjr2, cp, bic))
+which.min(models$cp)
+n <- nrow(fungusOTU)
+models$aic <- with(models, n*log(rss/n)+2*(p+1))
+best_aic <- which.min(models$aic)
+ASV127_best$which[which.min(models$aic),]
+```
+
+```
+```{r}
+ASV127_model <- lm(ASV127~ASV076+ASV125+ASV129+Timepoint+SampleType, data=bacteriaOTU)
+vif(ASV127_model)
+anova(ASV127_model)
+```
+
+Use AIC to determine best linear model for major genera
+```{r}
+
+otu_best_ASV129<- regsubsets(ASV129~., bacteriaOTU, nbest=10, really.big=T)
+ASV129_best <- summary(otu_best_ASV129)
+p <- rowSums(ASV129_best$which)
+models <- with(ASV129_best,data.frame(p, rss, adjr2, cp, bic))
+which.min(models$cp)
+n <- nrow(fungusOTU)
+models$aic <- with(models, n*log(rss/n)+2*(p+1))
+best_aic <- which.min(models$aic)
+ASV129_best$which[which.min(models$aic),]
+```
+
+```
+```{r}
+ASV129_model <- lm(ASV129~ASV076+ASV125+ASV127+Timepoint+SampleType, data=bacteriaOTU)
+vif(ASV129_model)
+anova(ASV129_model)
+```
+Buikld ordinate plots and compare diversity using unifrac distance
+```{r}
+wUF.ordu = ordinate(dfbacteria, method="NMDS", distance="unifrac", weighted=TRUE)
+dfbacteria.ord <- ordinate(dfbacteria, "NMDS", "bray")
+par(mfrow=c(1,1))
+
+plot(dfbacteria.ord)
+
+wunifrac_dist = phyloseq::distance(dfbacteria, method="unifrac", weighted=T)
+ordination = ordinate(dfbacteria, method="PCoA", distance=wunifrac_dist)
+plot_ordination(dfbacteria, ordination, color="PMAxx.") + theme(aspect.ratio=1) + 
+  scale_color_manual(values=c('darkgoldenrod2', 'cornsilk4')) + theme_bw()
+  
+adonis(wunifrac_dist ~ sample_data(dfbacteria)$PMAxx.)  
+
+```
+
